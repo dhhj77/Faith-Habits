@@ -28,81 +28,58 @@
       box-shadow: 0 15px 35px -5px rgba(129, 140, 248, 0.12), 0 5px 15px -3px rgba(244, 114, 182, 0.08);
     }
     .cal-cell {
-      min-height: 92px;
-      transition: all 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
-      border-radius: 0.95rem;
+      min-height: 48px;
+      transition: all 0.15s ease;
+      border-radius: 0.75rem;
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      padding: 4px 1px 3px 1px;
+      justify-content: space-between;
+      padding: 3px 1px 4px 1px;
     }
     .cal-cell:hover {
-      transform: translateY(-1.5px);
+      transform: translateY(-1px);
     }
     .cal-cell:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
     }
     .cal-cell.selected {
-      border: 2.2px solid #a855f7 !important;
-      background: linear-gradient(145deg, #fff5f8 0%, #f3e8ff 100%) !important;
-      box-shadow: 0 8px 18px -3px rgba(168, 85, 247, 0.25) !important;
-      transform: translateY(-2px) scale(1.02);
+      border: 2px solid #818cf8 !important;
+      background: linear-gradient(145deg, #f5f3ff 0%, #ede9fe 100%) !important;
+      box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.3) !important;
+      transform: translateY(-1px) scale(1.02);
       z-index: 2;
     }
     .cal-cell.today-marker::after {
-      content: '♥';
+      content: '●';
       position: absolute;
-      top: 2px;
+      top: 1.5px;
       right: 3px;
-      font-size: 8.5px;
+      font-size: 6px;
       color: #f43f5e;
-      font-weight: 900;
     }
-    /* Fixed-height Habit Rows for Perfectly Aligned Rows and Columns */
-    .habit-row-item {
-      height: 15px;
-      line-height: 15px;
-      font-size: 9.5px;
-      letter-spacing: -0.3px;
-      white-space: nowrap;
+    /* Compact Dots for Mobile Screen Visibility */
+    .habit-dots-row {
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 2.5px;
       width: 100%;
-      margin: 0.5px 0;
+      height: 9px;
+      margin-top: 2px;
     }
-    .done-badge {
-      display: inline-block;
-      width: 90%;
-      text-align: center;
+    .habit-dot {
+      width: 5px;
+      height: 5px;
       border-radius: 9999px;
-      padding: 0 1px;
-      font-weight: 800;
-      line-height: 14px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      display: inline-block;
     }
-    .done-badge-bible {
-      background-color: #e0e7ff;
-      color: #4338ca;
-    }
-    .done-badge-prayer {
-      background-color: #d1fae5;
-      color: #065f46;
-    }
-    .done-badge-evangelism {
-      background-color: #fef3c7;
-      color: #92400e;
-    }
-    .done-badge-meeting {
-      background-color: #fce7f3;
-      color: #9d174d;
-    }
-    .undone-badge {
-      color: #cbd5e1;
-      font-weight: 500;
-    }
+    .dot-bible { background-color: #4f46e5; }
+    .dot-prayer { background-color: #10b981; }
+    .dot-evangelism { background-color: #f59e0b; }
+    .dot-meeting { background-color: #a855f7; }
+    .dot-empty { background-color: #e2e8f0; }
 
     /* Hide scrollbars */
     ::-webkit-scrollbar {
@@ -154,7 +131,7 @@
   </div>
 
   <!-- MAIN APP CONTAINER -->
-  <div id="app-container" class="w-full max-w-md px-3.5 pt-3 hidden flex flex-col space-y-4">
+  <div id="app-container" class="w-full max-w-md px-3 pt-2 hidden flex flex-col space-y-2.5">
     
     <!-- TOP HEADER -->
     <header class="flex items-center justify-between pt-1">
@@ -222,33 +199,37 @@
     </div>
 
     <!-- TAB CONTENT: 신앙습관 -->
-    <div id="tab-habit" class="tab-pane space-y-4">
+    <div id="tab-habit" class="tab-pane space-y-2.5">
       
-      <!-- LOVELY CALENDAR CARD WITH STRICT ROW/COLUMN ALIGNMENT -->
-      <div class="cal-card-lovely rounded-[28px] p-4 text-slate-800">
+      <!-- LOVELY COMPACT CALENDAR CARD -->
+      <div class="cal-card-lovely rounded-2xl p-2.5 text-slate-800 shadow-sm">
         <!-- HEADER WITH CUTE MONTH NAV & GUIDE BADGE -->
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center space-x-2 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-2xl border border-pink-100 shadow-xs">
-            <button onclick="changeMonth(-1)" class="w-7 h-7 rounded-xl bg-pink-50 hover:bg-pink-100 active:scale-90 flex items-center justify-center text-rose-500 text-xs font-bold transition">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center space-x-1 bg-white/95 px-2 py-0.5 rounded-xl border border-indigo-100 shadow-2xs">
+            <button onclick="changeMonth(-1)" class="w-6 h-6 rounded-lg bg-slate-50 hover:bg-indigo-50 active:scale-90 flex items-center justify-center text-indigo-600 text-xs font-bold transition">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="flex items-center space-x-1.5 px-1">
-              <span class="text-sm">🌸</span>
-              <span class="font-black text-sm text-slate-800 tracking-tight" id="calendar-month-label">
+            <div class="flex items-center space-x-1 px-1">
+              <span class="text-xs">🌸</span>
+              <span class="font-black text-xs text-slate-800 tracking-tight" id="calendar-month-label">
                 2026년 11월
               </span>
             </div>
-            <button onclick="changeMonth(1)" class="w-7 h-7 rounded-xl bg-pink-50 hover:bg-pink-100 active:scale-90 flex items-center justify-center text-rose-500 text-xs font-bold transition">
+            <button onclick="changeMonth(1)" class="w-6 h-6 rounded-lg bg-slate-50 hover:bg-indigo-50 active:scale-90 flex items-center justify-center text-indigo-600 text-xs font-bold transition">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
-          <span class="inline-flex items-center space-x-1 bg-gradient-to-r from-rose-50 to-purple-50 text-rose-500 text-[11px] font-extrabold px-3 py-1.5 rounded-full border border-pink-200/60 shadow-2xs">
-            <span>✨</span><span>날짜를 눌러 체크하기</span>
-          </span>
+          <!-- Legend Dots -->
+          <div class="flex items-center space-x-1.5 text-[9px] text-slate-500 font-semibold">
+            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block"></span><span>말씀</span></span>
+            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span><span>기도</span></span>
+            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span><span>전도</span></span>
+            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span><span>모임</span></span>
+          </div>
         </div>
 
         <!-- DAY OF WEEK HEADERS (7 COLUMNS) -->
-        <div class="grid grid-cols-7 text-center text-xs font-bold pb-2 pt-1 border-b border-pink-100/70">
+        <div class="grid grid-cols-7 text-center text-[10px] font-bold pb-1 pt-0.5 border-b border-indigo-100/50">
           <div class="text-rose-400">일</div>
           <div class="text-slate-400">월</div>
           <div class="text-slate-400">화</div>
@@ -259,76 +240,69 @@
         </div>
 
         <!-- DYNAMIC MONTH CALENDAR GRID (PERFECT GRID ALIGNMENT) -->
-        <div id="calendar-grid" class="grid grid-cols-7 gap-1 pt-2">
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 pt-1">
           <!-- Rendered dynamically via JS -->
         </div>
       </div>
 
-      <!-- HABIT CHECK CARD -->
-      <div class="bg-white rounded-3xl p-5 text-slate-800 shadow-xl space-y-4">
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900" id="selected-date-heading">
-            곽도현님의 습관 체크
+      <!-- COMPACT HABIT CHECK CARD (VISIBLE ON FIRST SCREEN) -->
+      <div class="bg-white rounded-2xl p-3 text-slate-800 shadow-md space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-black text-slate-900 flex items-center space-x-1" id="selected-date-heading">
+            <span>곽도현님의 습관 체크</span>
           </h2>
-          <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed font-medium">
-            말씀 · 기도 · 전도 · 모임 달성 여부를 터치하여 체크하세요.
-          </p>
+          <span class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md">터치하여 달성 체크</span>
         </div>
 
         <!-- ADMIN BANNER IF APPLICABLE -->
-        <div id="admin-notice-box" class="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-3 flex items-start space-x-2 text-xs text-indigo-900 hidden">
-          <span class="text-sm">👑</span>
-          <div class="flex-1">
-            <span class="font-bold">관리자 권한:</span>
-            <span class="text-indigo-700"> 모든 참여자의 습관을 자유롭게 체크 및 수정할 수 있습니다.</span>
-            <!-- Admin member selector -->
-            <div class="mt-2 flex items-center space-x-2">
-              <span class="text-[11px] font-semibold text-slate-600">대상 회원:</span>
-              <select id="admin-target-user" onchange="changeTargetUser(this.value)" class="text-xs bg-white border border-indigo-300 rounded-lg px-2.5 py-1 font-bold text-indigo-700 outline-none">
-                <!-- Populated via JS -->
-              </select>
-            </div>
+        <div id="admin-notice-box" class="bg-indigo-50/90 border border-indigo-100 rounded-xl p-2 flex items-center justify-between text-xs text-indigo-900 hidden">
+          <div class="flex items-center space-x-1">
+            <span class="text-xs">👑</span>
+            <span class="font-bold text-[11px]">관리자:</span>
+            <span class="text-[11px] text-indigo-700">대상 구역원</span>
           </div>
+          <select id="admin-target-user" onchange="changeTargetUser(this.value)" class="text-xs bg-white border border-indigo-300 rounded-md px-2 py-0.5 font-bold text-indigo-700 outline-none">
+            <!-- Populated via JS -->
+          </select>
         </div>
 
-        <!-- HABIT TOGGLE GRID: 말씀 -> 기도 -> 전도 -> 모임 -->
-        <div class="grid grid-cols-2 gap-3 pt-1">
+        <!-- 4 HABIT BUTTONS IN 4 COLUMNS (ONE SCREEN FIT) -->
+        <div class="grid grid-cols-4 gap-1.5">
           <!-- 1. 말씀 -->
           <div onclick="toggleHabit('bible')" id="habit-card-bible"
-            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">말씀</span>
-            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+            class="habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-[11px] font-extrabold text-slate-700">말씀</span>
+            <span class="text-[10px] font-black status-text text-slate-400 mt-0.5">미달성</span>
           </div>
 
           <!-- 2. 기도 -->
           <div onclick="toggleHabit('prayer')" id="habit-card-prayer"
-            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">기도</span>
-            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+            class="habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-[11px] font-extrabold text-slate-700">기도</span>
+            <span class="text-[10px] font-black status-text text-slate-400 mt-0.5">미달성</span>
           </div>
 
           <!-- 3. 전도 -->
           <div onclick="toggleHabit('evangelism')" id="habit-card-evangelism"
-            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">전도</span>
-            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+            class="habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-[11px] font-extrabold text-slate-700">전도</span>
+            <span class="text-[10px] font-black status-text text-slate-400 mt-0.5">미달성</span>
           </div>
 
           <!-- 4. 모임 -->
           <div onclick="toggleHabit('meeting')" id="habit-card-meeting"
-            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">모임</span>
-            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+            class="habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-[11px] font-extrabold text-slate-700">모임</span>
+            <span class="text-[10px] font-black status-text text-slate-400 mt-0.5">미달성</span>
           </div>
         </div>
 
-        <!-- TODAY NOTE / MEMO -->
-        <div class="pt-2">
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">오늘의 한줄 묵상 / 나눔</label>
-          <div class="flex space-x-2">
-            <input type="text" id="habit-note-input" placeholder="오늘 은혜받은 말씀이나 소감을 남겨주세요"
-              class="flex-1 text-xs px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500">
-            <button onclick="saveDailyNote()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow hover:bg-indigo-700 active:scale-95 transition">저장</button>
+        <!-- COMPACT TODAY NOTE -->
+        <div class="pt-0.5">
+          <div class="flex space-x-1.5">
+            <input type="text" id="habit-note-input" placeholder="오늘 한줄 묵상 / 나눔"
+              class="flex-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500">
+            <button onclick="saveDailyNote()" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[11px] font-bold shadow-xs active:scale-95 transition">저장</button>
           </div>
         </div>
       </div>
@@ -971,57 +945,49 @@
           isSelected 
             ? 'selected' 
             : isAllDone
-              ? 'border-purple-200 bg-gradient-to-b from-[#faf5ff] to-[#fff0f5] shadow-xs hover:border-pink-300'
-              : 'border-slate-100 bg-[#fafafc] hover:bg-pink-50/30 hover:border-pink-200'
+              ? 'border-indigo-300 bg-indigo-50/60 shadow-xs'
+              : 'border-slate-100 bg-white hover:bg-slate-50'
         }`;
         dayCell.onclick = () => selectDate(dStr);
 
-        // Fixed-Height Top Row: Date Number (Centered with consistent baseline)
+        // Compact Top Row: Date Number & Flower/Badge
         const topRow = document.createElement('div');
-        topRow.className = "w-full h-5 flex items-center justify-between px-1 mb-0.5";
+        topRow.className = "w-full flex items-center justify-between px-1";
         
         const dateNum = document.createElement('span');
-        dateNum.className = `text-[11px] font-black ${isSelected ? 'text-purple-900 font-black' : dateColorClass}`;
+        dateNum.className = `text-[11px] font-extrabold ${isSelected ? 'text-indigo-900' : dateColorClass}`;
         dateNum.textContent = `${day}`;
         topRow.appendChild(dateNum);
 
         if (isAllDone) {
           const starIcon = document.createElement('span');
-          starIcon.className = "text-[9px] animate-pulse leading-none";
+          starIcon.className = "text-[9px] leading-none";
           starIcon.textContent = "🌸";
           topRow.appendChild(starIcon);
         } else if (completedCount > 0) {
           const countBadge = document.createElement('span');
-          countBadge.className = "text-[8.5px] font-extrabold text-pink-400 leading-none";
-          countBadge.textContent = `${completedCount}/4`;
+          countBadge.className = "text-[8px] font-bold text-indigo-500 leading-none";
+          countBadge.textContent = `${completedCount}`;
           topRow.appendChild(countBadge);
         } else {
-          // Empty placeholder to preserve flex layout balance
           const spacer = document.createElement('span');
-          spacer.className = "w-2";
+          spacer.className = "w-1.5";
           topRow.appendChild(spacer);
         }
-
         dayCell.appendChild(topRow);
 
-        // Fixed-Height 4 Habit Rows: 말씀, 기도, 전도, 모임
-        const habitContainer = document.createElement('div');
-        habitContainer.className = "w-full flex flex-col justify-start items-center";
+        // 4 Habit Dots for Compact Mobile View: 말씀(파랑), 기도(초록), 전도(주황), 모임(보라)
+        const dotsRow = document.createElement('div');
+        dotsRow.className = "habit-dots-row";
 
         HABIT_CONFIG.forEach(it => {
-          const rowItem = document.createElement('div');
-          rowItem.className = "habit-row-item";
-
+          const dot = document.createElement('span');
           const isDone = !!record[it.key];
-          const badge = document.createElement('span');
-          badge.textContent = it.label; // Exactly 2 characters for strict alignment
-          badge.className = isDone ? `done-badge ${it.doneClass}` : 'undone-badge';
-
-          rowItem.appendChild(badge);
-          habitContainer.appendChild(rowItem);
+          dot.className = `habit-dot ${isDone ? 'dot-' + it.key : 'dot-empty'}`;
+          dotsRow.appendChild(dot);
         });
 
-        dayCell.appendChild(habitContainer);
+        dayCell.appendChild(dotsRow);
         calGrid.appendChild(dayCell);
       }
     }
@@ -1051,17 +1017,17 @@
       const card = document.getElementById(`habit-card-${type}`);
       if (!card) return;
       const statusText = card.querySelector('.status-text');
-      const badge = card.querySelector('span:first-child');
+      const label = card.querySelector('span:first-child');
 
       if (isDone) {
-        card.className = "habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-indigo-500 bg-[#5d5fef] text-white shadow-md active:scale-95";
-        badge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white mb-1";
-        statusText.className = "font-black text-sm text-white status-text";
-        statusText.textContent = "✓ 달성 완료";
+        card.className = "habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-indigo-600 bg-indigo-600 text-white shadow-sm active:scale-95";
+        label.className = "text-[11px] font-black text-white";
+        statusText.className = "text-[10px] font-black text-indigo-100 mt-0.5 status-text";
+        statusText.textContent = "✓ 완료";
       } else {
-        card.className = "habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95";
-        badge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1";
-        statusText.className = "font-extrabold text-sm text-slate-500 status-text";
+        card.className = "habit-btn rounded-xl py-2 px-1 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50 hover:bg-slate-100 active:scale-95";
+        label.className = "text-[11px] font-bold text-slate-700";
+        statusText.className = "text-[10px] font-semibold text-slate-400 mt-0.5 status-text";
         statusText.textContent = "미달성";
       }
     }

@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>신앙습관 만들기</title>
+  <!-- Firebase SDKs (v9 compat for easy single-file usage) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #1a1e2e;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", Roboto, "Noto Sans KR", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dark-card {
+      background-color: #242a3d;
+      border: 1px solid #333b52;
+    }
+    /* Lovely & Aesthetic Calendar Styling with Strict Line/Grid Alignment */
+    .cal-card-lovely {
+      background: linear-gradient(180deg, #ffffff 0%, #faf8ff 100%);
+      border: 1px solid rgba(244, 114, 182, 0.25);
+      box-shadow: 0 15px 35px -5px rgba(129, 140, 248, 0.12), 0 5px 15px -3px rgba(244, 114, 182, 0.08);
+    }
+    .cal-cell {
+      min-height: 92px;
+      transition: all 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+      border-radius: 0.95rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 4px 1px 3px 1px;
+    }
+    .cal-cell:hover {
+      transform: translateY(-1.5px);
+    }
+    .cal-cell:active {
+      transform: scale(0.96);
+    }
+    .cal-cell.selected {
+      border: 2.2px solid #a855f7 !important;
+      background: linear-gradient(145deg, #fff5f8 0%, #f3e8ff 100%) !important;
+      box-shadow: 0 8px 18px -3px rgba(168, 85, 247, 0.25) !important;
+      transform: translateY(-2px) scale(1.02);
+      z-index: 2;
+    }
+    .cal-cell.today-marker::after {
+      content: '♥';
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 8.5px;
+      color: #f43f5e;
+      font-weight: 900;
+    }
+    /* Fixed-height Habit Rows for Perfectly Aligned Rows and Columns */
+    .habit-row-item {
+      height: 15px;
+      line-height: 15px;
+      font-size: 9.5px;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 0.5px 0;
+    }
+    .done-badge {
+      display: inline-block;
+      width: 90%;
+      text-align: center;
+      border-radius: 9999px;
+      padding: 0 1px;
+      font-weight: 800;
+      line-height: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .done-badge-bible {
+      background-color: #e0e7ff;
+      color: #4338ca;
+    }
+    .done-badge-prayer {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .done-badge-evangelism {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .done-badge-meeting {
+      background-color: #fce7f3;
+      color: #9d174d;
+    }
+    .undone-badge {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* Hide scrollbars */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start pb-16">
+
+  <!-- FIREBASE CONFIG MODAL BANNER -->
+  <div id="firebase-config-banner" class="w-full max-w-md bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs px-4 py-2 flex justify-between items-center hidden">
+    <span>⚠️ Firebase 설정이 필요합니다.</span>
+    <button onclick="openConfigModal()" class="underline font-bold">설정하기</button>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-section" class="w-full max-w-md p-6 my-auto flex flex-col items-center">
+    <div class="w-full bg-[#242a3d] border border-[#333b52] rounded-3xl p-7 shadow-2xl">
+      <div class="text-center mb-6">
+        <span class="inline-block bg-[#5d5fef] text-white font-bold text-xs px-3.5 py-1 rounded-full mb-3 shadow">HABIT TRACKER</span>
+        <h1 class="text-2xl font-black text-white tracking-tight">신앙습관 만들기</h1>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">아이디</label>
+          <input type="text" id="login-username" required autocomplete="off"
+            class="w-full px-4 py-3.5 rounded-xl bg-[#1a1e2e] border border-[#37415c] text-white focus:outline-none focus:border-indigo-500 text-sm placeholder-transparent transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">비밀번호</label>
+          <input type="password" id="login-password" required autocomplete="off"
+            class="w-full px-4 py-3.5 rounded-xl bg-[#1a1e2e] border border-[#37415c] text-white focus:outline-none focus:border-indigo-500 text-sm placeholder-transparent transition">
+        </div>
+
+        <div id="login-error" class="text-xs text-rose-400 text-center min-h-[1.25rem]"></div>
+
+        <button type="submit" id="login-submit-btn"
+          class="w-full py-3.5 bg-[#5d5fef] hover:bg-[#4d4fd9] active:scale-[0.99] text-white font-bold rounded-xl text-sm transition shadow-lg shadow-indigo-600/30">
+          로그인
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container" class="w-full max-w-md px-3.5 pt-3 hidden flex flex-col space-y-4">
+    
+    <!-- TOP HEADER -->
+    <header class="flex items-center justify-between pt-1">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-xl bg-[#5d5fef] flex items-center justify-center text-white text-base shadow-sm">
+          ✨
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center space-x-1">
+            <span>신앙습관 만들기</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 font-medium">말씀 · 기도 · 전도 · 모임</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-1.5 bg-[#142926] border border-[#1b433e] text-emerald-400 text-[11px] font-semibold px-2.5 py-1 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>클라우드 실시간 ON</span>
+      </div>
+    </header>
+
+    <!-- ACTION BUTTON BAR -->
+    <div class="flex items-center justify-between gap-1.5 pt-1">
+      <div class="flex items-center space-x-1.5 bg-[#252b3e] border border-[#38425d] px-2.5 py-1.5 rounded-xl">
+        <div class="w-6 h-6 rounded-full bg-amber-200 text-slate-800 flex items-center justify-center text-xs">🐻</div>
+        <span class="text-xs font-bold text-slate-200" id="user-display-name">사용자님</span>
+      </div>
+
+      <div class="flex items-center space-x-1">
+        <button onclick="exportToExcel()" class="bg-[#196342] hover:bg-[#145337] text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-emerald-600/40 flex items-center space-x-1 shadow-sm">
+          <span>📊 엑셀</span>
+        </button>
+        <button onclick="captureScreen()" class="bg-[#483d8b] hover:bg-[#3b3273] text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-indigo-500/40 flex items-center space-x-1 shadow-sm">
+          <span>📸 캡처</span>
+        </button>
+        <button onclick="backupData()" class="bg-[#333d52] hover:bg-[#3d4962] text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-600 flex items-center space-x-1 shadow-sm">
+          <span>💾 백업</span>
+        </button>
+        <button id="admin-toggle-btn" onclick="openUserManagementModal()" class="bg-[#2e374d] hover:bg-[#384460] text-amber-300 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-amber-500/40 flex items-center space-x-1 shadow-sm hidden">
+          <span>👥 회원관리</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LOGOUT BUTTON -->
+    <div class="flex justify-start">
+      <button onclick="handleLogout()" class="bg-[#562235] hover:bg-[#682940] text-rose-200 text-xs font-semibold px-3 py-1 rounded-lg border border-rose-800/60 shadow-sm transition">
+        로그아웃
+      </button>
+    </div>
+
+    <!-- MAIN NAV TABS -->
+    <div class="flex items-center justify-between bg-[#22283a] p-1 rounded-2xl border border-[#31394e] text-xs font-semibold">
+      <button class="nav-btn active flex-1 py-2.5 rounded-xl text-white bg-[#5d5fef] transition flex items-center justify-center space-x-1" onclick="switchTab('habit')">
+        <span>🌱</span><span>신앙습관</span>
+      </button>
+      <button class="nav-btn flex-1 py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center space-x-1" onclick="switchTab('ranking')">
+        <span>🥇</span><span>순위</span>
+      </button>
+      <button class="nav-btn flex-1 py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center space-x-1" onclick="switchTab('board')">
+        <span>🔢</span><span>현황판</span>
+      </button>
+      <button class="nav-btn flex-1 py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center space-x-1" onclick="switchTab('notice')">
+        <span>💬</span><span>게시판</span>
+      </button>
+    </div>
+
+    <!-- TAB CONTENT: 신앙습관 -->
+    <div id="tab-habit" class="tab-pane space-y-4">
+      
+      <!-- LOVELY CALENDAR CARD WITH STRICT ROW/COLUMN ALIGNMENT -->
+      <div class="cal-card-lovely rounded-[28px] p-4 text-slate-800">
+        <!-- HEADER WITH CUTE MONTH NAV & GUIDE BADGE -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-2xl border border-pink-100 shadow-xs">
+            <button onclick="changeMonth(-1)" class="w-7 h-7 rounded-xl bg-pink-50 hover:bg-pink-100 active:scale-90 flex items-center justify-center text-rose-500 text-xs font-bold transition">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="flex items-center space-x-1.5 px-1">
+              <span class="text-sm">🌸</span>
+              <span class="font-black text-sm text-slate-800 tracking-tight" id="calendar-month-label">
+                2026년 11월
+              </span>
+            </div>
+            <button onclick="changeMonth(1)" class="w-7 h-7 rounded-xl bg-pink-50 hover:bg-pink-100 active:scale-90 flex items-center justify-center text-rose-500 text-xs font-bold transition">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          <span class="inline-flex items-center space-x-1 bg-gradient-to-r from-rose-50 to-purple-50 text-rose-500 text-[11px] font-extrabold px-3 py-1.5 rounded-full border border-pink-200/60 shadow-2xs">
+            <span>✨</span><span>날짜를 눌러 체크하기</span>
+          </span>
+        </div>
+
+        <!-- DAY OF WEEK HEADERS (7 COLUMNS) -->
+        <div class="grid grid-cols-7 text-center text-xs font-bold pb-2 pt-1 border-b border-pink-100/70">
+          <div class="text-rose-400">일</div>
+          <div class="text-slate-400">월</div>
+          <div class="text-slate-400">화</div>
+          <div class="text-slate-400">수</div>
+          <div class="text-slate-400">목</div>
+          <div class="text-slate-400">금</div>
+          <div class="text-indigo-400">토</div>
+        </div>
+
+        <!-- DYNAMIC MONTH CALENDAR GRID (PERFECT GRID ALIGNMENT) -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 pt-2">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- HABIT CHECK CARD -->
+      <div class="bg-white rounded-3xl p-5 text-slate-800 shadow-xl space-y-4">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900" id="selected-date-heading">
+            곽도현님의 습관 체크
+          </h2>
+          <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed font-medium">
+            말씀 · 기도 · 전도 · 모임 달성 여부를 터치하여 체크하세요.
+          </p>
+        </div>
+
+        <!-- ADMIN BANNER IF APPLICABLE -->
+        <div id="admin-notice-box" class="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-3 flex items-start space-x-2 text-xs text-indigo-900 hidden">
+          <span class="text-sm">👑</span>
+          <div class="flex-1">
+            <span class="font-bold">관리자 권한:</span>
+            <span class="text-indigo-700"> 모든 참여자의 습관을 자유롭게 체크 및 수정할 수 있습니다.</span>
+            <!-- Admin member selector -->
+            <div class="mt-2 flex items-center space-x-2">
+              <span class="text-[11px] font-semibold text-slate-600">대상 회원:</span>
+              <select id="admin-target-user" onchange="changeTargetUser(this.value)" class="text-xs bg-white border border-indigo-300 rounded-lg px-2.5 py-1 font-bold text-indigo-700 outline-none">
+                <!-- Populated via JS -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- HABIT TOGGLE GRID: 말씀 -> 기도 -> 전도 -> 모임 -->
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <!-- 1. 말씀 -->
+          <div onclick="toggleHabit('bible')" id="habit-card-bible"
+            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">말씀</span>
+            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+          </div>
+
+          <!-- 2. 기도 -->
+          <div onclick="toggleHabit('prayer')" id="habit-card-prayer"
+            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">기도</span>
+            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+          </div>
+
+          <!-- 3. 전도 -->
+          <div onclick="toggleHabit('evangelism')" id="habit-card-evangelism"
+            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">전도</span>
+            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+          </div>
+
+          <!-- 4. 모임 -->
+          <div onclick="toggleHabit('meeting')" id="habit-card-meeting"
+            class="habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1">모임</span>
+            <span class="font-extrabold text-sm text-slate-600 status-text">미달성</span>
+          </div>
+        </div>
+
+        <!-- TODAY NOTE / MEMO -->
+        <div class="pt-2">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">오늘의 한줄 묵상 / 나눔</label>
+          <div class="flex space-x-2">
+            <input type="text" id="habit-note-input" placeholder="오늘 은혜받은 말씀이나 소감을 남겨주세요"
+              class="flex-1 text-xs px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500">
+            <button onclick="saveDailyNote()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow hover:bg-indigo-700 active:scale-95 transition">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTHER TAB: RANKING (MONTHLY RESET & ARCHIVED HISTORY) -->
+    <div id="tab-ranking" class="tab-pane hidden space-y-3">
+      <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 text-white shadow-xl">
+        
+        <!-- RANKING HEADER & MONTH STEPPER -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60">
+          <div>
+            <div class="text-[10px] font-bold text-amber-400 tracking-wide uppercase">Monthly Leaderboard</div>
+            <h3 class="text-lg font-black tracking-tight flex items-center space-x-1.5">
+              <span id="ranking-month-title">2026년 11월</span>
+              <span>순위</span>
+            </h3>
+          </div>
+
+          <!-- Month Selector for Ranking -->
+          <div class="flex items-center space-x-1 bg-[#1a1e2e] p-1 rounded-xl border border-slate-700" id="ranking-month-ctrls">
+            <button onclick="changeRankingMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 active:scale-90 flex items-center justify-center text-xs text-slate-300 transition">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="text-xs font-extrabold px-1.5" id="ranking-month-badge">11월</span>
+            <button onclick="changeRankingMonth(1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 active:scale-90 flex items-center justify-center text-xs text-slate-300 transition">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- MODE TOGGLE (월별 순위 vs 역대 누적 순위) -->
+        <div class="flex items-center justify-between bg-[#1a1e2e] p-1 rounded-xl border border-slate-800 text-xs mt-3">
+          <button id="rank-mode-monthly-btn" onclick="setRankingMode('monthly')" class="flex-1 py-1.5 rounded-lg font-bold text-white bg-indigo-600 transition shadow-xs text-center">
+            월별 순위 (1일 초기화)
+          </button>
+          <button id="rank-mode-all-btn" onclick="setRankingMode('all')" class="flex-1 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition text-center">
+            역대 전체 누적
+          </button>
+        </div>
+
+        <!-- NOTICE BANNER EXPLAINING MONTHLY RESET -->
+        <div class="bg-indigo-950/40 border border-indigo-800/50 rounded-2xl p-2.5 text-[11px] text-indigo-300 flex items-start space-x-2 mt-2">
+          <span class="text-xs">ℹ️</span>
+          <p class="leading-relaxed font-normal" id="ranking-desc-text">
+            순위는 매월 말일까지 집계되고 <strong>매월 1일에 새롭게 시작</strong>됩니다. 상단 월 이동(◀ ▶)으로 지난 달 순위를 언제든 조회할 수 있습니다.
+          </p>
+        </div>
+
+        <!-- DYNAMIC RANKING LIST -->
+        <div id="ranking-list" class="space-y-2 pt-2">
+          <!-- Populated dynamically -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- OTHER TAB: BOARD (MONTHLY ACTIVITY VISUALIZATION REPORT) -->
+    <div id="tab-board" class="tab-pane hidden space-y-4">
+      
+      <!-- MONTH SELECTOR & SUMMARY HEADER -->
+      <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 text-white shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60">
+          <div>
+            <div class="text-[11px] font-semibold text-indigo-400">MONTHLY REPORT</div>
+            <h3 class="text-lg font-black tracking-tight flex items-center space-x-1.5">
+              <span id="board-month-title">2026년 11월</span>
+              <span>활동 리포트</span>
+            </h3>
+          </div>
+          <!-- Month Control Buttons -->
+          <div class="flex items-center space-x-1 bg-[#1a1e2e] p-1 rounded-xl border border-slate-700">
+            <button onclick="changeBoardMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 flex items-center justify-center text-xs text-slate-300">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="text-xs font-bold px-1.5" id="board-month-badge">11월</span>
+            <button onclick="changeBoardMonth(1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 flex items-center justify-center text-xs text-slate-300">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- MY MONTHLY HIGHLIGHT CARD -->
+        <div class="pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm">🎯</span>
+              <span class="text-xs font-bold text-slate-200">
+                <span id="board-my-name" class="text-indigo-400 font-extrabold">곽도현</span>님의 이번 달 신앙 성취율
+              </span>
+            </div>
+            <span id="board-my-rate" class="text-xs font-extrabold text-emerald-400">0% 실천</span>
+          </div>
+
+          <!-- Total Progress Gauge Bar -->
+          <div class="w-full bg-[#1a1e2e] h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-700 mb-4">
+            <div id="board-my-progressbar" class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 transition-all duration-500" style="width: 0%"></div>
+          </div>
+
+          <!-- 4 Category Visual Indicators -->
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <!-- 말씀 -->
+            <div class="bg-[#1a1e2e] p-3 rounded-2xl border border-slate-800">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-bold text-indigo-400 flex items-center space-x-1">
+                  <span>📖</span><span>말씀</span>
+                </span>
+                <span class="text-xs font-black text-white" id="my-stat-bible">0회</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="my-bar-bible" class="h-full bg-indigo-500 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- 기도 -->
+            <div class="bg-[#1a1e2e] p-3 rounded-2xl border border-slate-800">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-bold text-emerald-400 flex items-center space-x-1">
+                  <span>🙏</span><span>기도</span>
+                </span>
+                <span class="text-xs font-black text-white" id="my-stat-prayer">0회</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="my-bar-prayer" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- 전도 -->
+            <div class="bg-[#1a1e2e] p-3 rounded-2xl border border-slate-800">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-bold text-amber-400 flex items-center space-x-1">
+                  <span>🌾</span><span>전도</span>
+                </span>
+                <span class="text-xs font-black text-white" id="my-stat-evangelism">0회</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="my-bar-evangelism" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- 모임 -->
+            <div class="bg-[#1a1e2e] p-3 rounded-2xl border border-slate-800">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-bold text-purple-400 flex items-center space-x-1">
+                  <span>👥</span><span>모임</span>
+                </span>
+                <span class="text-xs font-black text-white" id="my-stat-meeting">0회</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="my-bar-meeting" class="h-full bg-purple-500 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Monthly Count Badge -->
+          <div class="mt-3.5 p-3 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 flex justify-between items-center text-xs">
+            <span class="text-slate-300">한 달 동안 실천한 총 활동 수</span>
+            <span class="text-sm font-black text-indigo-300" id="my-total-month-count">총 0회 실천</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL MEMBERS MONTHLY BREAKDOWN TABLE WITH VISUAL BARS -->
+      <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 text-white shadow-xl">
+        <h4 class="font-bold text-sm mb-3 flex items-center space-x-1.5">
+          <span>👥 참여자별 이번 달 활동량 비교</span>
+        </h4>
+        <div class="space-y-3" id="board-members-cards">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- OTHER TAB: NOTICE -->
+    <div id="tab-notice" class="tab-pane hidden space-y-3">
+      <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 text-white">
+        <h3 class="font-bold text-base mb-2">💬 나눔 & 게시판</h3>
+        <p class="text-xs text-slate-400 mb-4">함께 은혜를 나누고 응원하는 공간입니다.</p>
+        <div class="space-y-3 mb-4">
+          <textarea id="notice-input" rows="2" placeholder="응원의 한마디나 묵상을 나눠주세요"
+            class="w-full px-3 py-2 bg-[#1a1e2e] border border-slate-700 rounded-xl text-xs text-white focus:outline-none"></textarea>
+          <div class="flex justify-end">
+            <button onclick="postNotice()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold active:scale-95 transition">등록하기</button>
+          </div>
+        </div>
+        <div id="notice-list" class="space-y-2.5">
+          <!-- Notices rendered here -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- USER MANAGEMENT MODAL (ADMIN ONLY) -->
+  <div id="user-mgmt-modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 w-full max-w-md text-white shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-amber-300 flex items-center space-x-1.5">
+          <span>👥 회원 관리</span>
+        </h3>
+        <button onclick="closeUserManagementModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">&times;</button>
+      </div>
+      <p class="text-xs text-slate-300 mb-3">구역원을 추가하거나 관리할 수 있습니다. 등록된 구역원만 로그인이 가능합니다.</p>
+
+      <!-- Add New Member Form -->
+      <form onsubmit="addNewUser(event)" class="bg-[#1a1e2e] border border-slate-700/80 rounded-2xl p-3 mb-4 space-y-2">
+        <span class="text-xs font-bold text-indigo-400 block">➕ 새 구역원 등록</span>
+        <div class="grid grid-cols-3 gap-2">
+          <input type="text" id="new-user-id" placeholder="이름(아이디)" required
+            class="text-xs p-2 bg-[#242a3d] border border-slate-700 rounded-xl text-white focus:outline-none">
+          <input type="text" id="new-user-pw" placeholder="비번(생년월일)" required
+            class="text-xs p-2 bg-[#242a3d] border border-slate-700 rounded-xl text-white focus:outline-none">
+          <select id="new-user-role" class="text-xs p-2 bg-[#242a3d] border border-slate-700 rounded-xl text-white focus:outline-none">
+            <option value="회원">회원</option>
+            <option value="관리자">관리자</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition active:scale-95">
+          구역원 추가하기
+        </button>
+      </form>
+
+      <!-- Member List -->
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+        <div class="text-xs font-semibold text-slate-400 mb-1 flex justify-between">
+          <span>등록된 구역원 목록</span>
+          <span id="mgmt-member-count" class="text-amber-400 font-bold">0명</span>
+        </div>
+        <div id="user-mgmt-list" class="space-y-1.5 text-xs">
+          <!-- Member items rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-3 border-t border-slate-700/50 mt-2">
+        <button onclick="closeUserManagementModal()" class="px-4 py-1.5 rounded-xl text-xs bg-slate-700 hover:bg-slate-600 text-slate-200">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG MODAL -->
+  <div id="config-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-6 w-full max-w-sm text-white shadow-2xl">
+      <h3 class="text-base font-bold mb-2">⚙️ Firebase 설정</h3>
+      <p class="text-xs text-slate-300 mb-3">Firebase Console 프로젝트 설정의 firebaseConfig 객체를 입력해주세요.</p>
+      <textarea id="firebase-config-json" rows="6" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}'
+        class="w-full text-xs p-3 bg-[#1a1e2e] border border-slate-700 rounded-xl font-mono text-slate-200 focus:outline-none"></textarea>
+      <div class="flex justify-end space-x-2 mt-4">
+        <button onclick="closeConfigModal()" class="px-3.5 py-1.5 rounded-lg text-xs bg-slate-700 hover:bg-slate-600 text-slate-200">취소</button>
+        <button onclick="saveFirebaseConfig()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Default Initial Users from Excel
+    const DEFAULT_USERS = [
+      { id: "곽도현", pw: "330630", role: "관리자" },
+      { id: "김혜정", pw: "940115", role: "회원" },
+      { id: "김재희", pw: "990916", role: "회원" },
+      { id: "홍세관", pw: "940506", role: "회원" },
+      { id: "김재윤", pw: "990730", role: "회원" },
+      { id: "안하은", pw: "930711", role: "회원" },
+      { id: "신정수", pw: "940708", role: "회원" }
+    ];
+
+    // Embedded Firebase Config (Faith Habits)
+    const EMBEDDED_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDNvknjOk2hZ9RumW0vm1-B2CTnhpIoGXc",
+      authDomain: "faith-habits-e215d.firebaseapp.com",
+      projectId: "faith-habits-e215d",
+      storageBucket: "faith-habits-e215d.firebasestorage.app",
+      messagingSenderId: "1089818041866",
+      appId: "1:1089818041866:web:529d74edad839c3e3189f3"
+    };
+
+    // Dynamic authorized users loaded from Firestore/Local
+    let AUTHORIZED_USERS = [...DEFAULT_USERS];
+
+    // Habit items: 말씀, 기도, 전도, 모임
+    const HABIT_CONFIG = [
+      { key: 'bible', label: '말씀', color: 'text-indigo-600', barColor: 'bg-indigo-500', doneClass: 'done-badge-bible' },
+      { key: 'prayer', label: '기도', color: 'text-emerald-600', barColor: 'bg-emerald-500', doneClass: 'done-badge-prayer' },
+      { key: 'evangelism', label: '전도', color: 'text-amber-600', barColor: 'bg-amber-500', doneClass: 'done-badge-evangelism' },
+      { key: 'meeting', label: '모임', color: 'text-purple-600', barColor: 'bg-purple-500', doneClass: 'done-badge-meeting' }
+    ];
+
+    let currentUser = null;
+    let targetUserId = null;
+    let isAdminMode = false;
+    let habitsData = {};
+    let notices = [];
+
+    // Current displayed calendar year & month
+    const today = new Date();
+    let viewYear = today.getFullYear();
+    let viewMonth = today.getMonth(); // 0-indexed
+    let boardYear = today.getFullYear();
+    let boardMonth = today.getMonth();
+    
+    // Ranking Year, Month & Mode ('monthly' vs 'all')
+    let rankingYear = today.getFullYear();
+    let rankingMonth = today.getMonth();
+    let rankingMode = 'monthly'; // 'monthly' by default (1st day reset)
+
+    let selectedDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Firebase References
+    let db = null;
+    let auth = null;
+
+    function initFirebase() {
+      loadLocalUsers();
+      try {
+        const savedConfig = localStorage.getItem('firebase_app_config');
+        const config = savedConfig ? JSON.parse(savedConfig) : EMBEDDED_FIREBASE_CONFIG;
+        
+        if (!firebase.apps.length) {
+          firebase.initializeApp(config);
+        }
+        db = firebase.firestore();
+        auth = firebase.auth();
+        const banner = document.getElementById('firebase-config-banner');
+        if (banner) banner.classList.add('hidden');
+        
+        // Initial anonymous auth to ensure reliable DB connection
+        auth.signInAnonymously().catch(err => console.log("Auth note:", err.message));
+        
+        setupRealtimeListeners();
+        seedInitialUsersIfEmpty();
+      } catch (e) {
+        console.error("Firebase init error", e);
+      }
+    }
+
+    function loadLocalUsers() {
+      const saved = localStorage.getItem('faith_users_cache');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            AUTHORIZED_USERS = parsed;
+          }
+        } catch (e) {}
+      }
+    }
+
+    function saveLocalUsers() {
+      localStorage.setItem('faith_users_cache', JSON.stringify(AUTHORIZED_USERS));
+    }
+
+    // Seed Excel 7 users to Firestore if collection is empty
+    async function seedInitialUsersIfEmpty() {
+      if (!db) return;
+      try {
+        const snap = await db.collection("users").limit(1).get();
+        if (snap.empty) {
+          const batch = db.batch();
+          DEFAULT_USERS.forEach(u => {
+            const ref = db.collection("users").doc(u.id);
+            batch.set(ref, {
+              id: u.id,
+              pw: u.pw,
+              role: u.role,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          });
+          await batch.commit();
+          console.log("Initial Excel users seeded to Firestore successfully.");
+        }
+      } catch (err) {
+        console.warn("User seed note:", err);
+      }
+    }
+
+    function setupRealtimeListeners() {
+      if (!db) return;
+
+      // Realtime Users Sync
+      db.collection("users").onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+          const usersList = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            usersList.push({
+              id: data.id || doc.id,
+              pw: String(data.pw || ""),
+              role: data.role || "회원"
+            });
+          });
+          AUTHORIZED_USERS = usersList;
+          saveLocalUsers();
+
+          if (currentUser) {
+            const updatedMe = AUTHORIZED_USERS.find(u => u.id === currentUser.id);
+            if (updatedMe) {
+              currentUser = updatedMe;
+              sessionStorage.setItem('current_user', JSON.stringify(updatedMe));
+            }
+          }
+
+          if (currentUser && currentUser.role === "관리자") {
+            populateAdminSelector();
+            renderUserManagementList();
+          }
+          renderCalendar();
+          renderRankingAndBoard();
+        }
+      }, err => {
+        console.error("Users sync error:", err);
+      });
+
+      // Realtime Habits Sync
+      db.collection("habits").onSnapshot(snapshot => {
+        snapshot.forEach(doc => {
+          habitsData[doc.id] = doc.data();
+        });
+        localStorage.setItem('local_habits', JSON.stringify(habitsData));
+        renderCalendar();
+        renderHabitCard();
+        renderRankingAndBoard();
+      }, err => {
+        console.error("Habits sync error:", err);
+      });
+
+      // Realtime Notices Sync
+      db.collection("notices").orderBy("createdAt", "desc").limit(20).onSnapshot(snapshot => {
+        notices = [];
+        snapshot.forEach(doc => notices.push({ id: doc.id, ...doc.data() }));
+        renderNotices();
+      }, err => {
+        console.error("Notices sync error:", err);
+      });
+    }
+
+    // Login Handler - Strict Authentication by Name & PW
+    async function handleLogin(e) {
+      e.preventDefault();
+      const idInput = document.getElementById('login-username').value.trim();
+      const pwInput = document.getElementById('login-password').value.trim();
+      const errBox = document.getElementById('login-error');
+
+      if (!idInput || !pwInput) {
+        errBox.textContent = "이름과 비밀번호를 모두 입력해주세요.";
+        return;
+      }
+
+      // Try local/cached check first
+      let foundUser = AUTHORIZED_USERS.find(u => u.id === idInput && u.pw === pwInput);
+
+      // If not found locally, query Firestore directly to ensure latest member login
+      if (!foundUser && db) {
+        try {
+          const doc = await db.collection("users").doc(idInput).get();
+          if (doc.exists) {
+            const data = doc.data();
+            if (String(data.pw) === pwInput) {
+              foundUser = { id: data.id || doc.id, pw: String(data.pw), role: data.role || "회원" };
+              // Add to local list if missing
+              if (!AUTHORIZED_USERS.some(u => u.id === foundUser.id)) {
+                AUTHORIZED_USERS.push(foundUser);
+                saveLocalUsers();
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("Direct user fetch error:", err);
+        }
+      }
+
+      if (!foundUser) {
+        errBox.textContent = "아이디 또는 비밀번호가 일치하지 않습니다. 등록된 구역원만 접속 가능합니다.";
+        return;
+      }
+
+      errBox.textContent = "";
+      currentUser = foundUser;
+      targetUserId = foundUser.id;
+      sessionStorage.setItem('current_user', JSON.stringify(foundUser));
+
+      showApp();
+    }
+
+    function showApp() {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('app-container').classList.remove('hidden');
+
+      document.getElementById('user-display-name').textContent = currentUser.id + "님";
+      document.getElementById('board-my-name').textContent = currentUser.id;
+      
+      if (currentUser.role === "관리자") {
+        document.getElementById('admin-toggle-btn').classList.remove('hidden');
+        document.getElementById('admin-notice-box').classList.remove('hidden');
+        populateAdminSelector();
+      } else {
+        document.getElementById('admin-toggle-btn').classList.add('hidden');
+        document.getElementById('admin-notice-box').classList.add('hidden');
+      }
+
+      loadLocalHabits();
+      renderCalendar();
+      renderHabitCard();
+      renderRankingAndBoard();
+    }
+
+    function populateAdminSelector() {
+      const select = document.getElementById('admin-target-user');
+      select.innerHTML = '';
+      AUTHORIZED_USERS.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.id} (${u.role})`;
+        if (u.id === targetUserId) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function changeTargetUser(val) {
+      targetUserId = val;
+      renderHabitCard();
+      renderCalendar();
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('current_user');
+      currentUser = null;
+      targetUserId = null;
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      document.getElementById('app-container').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    // Month Navigation for Calendar
+    function changeMonth(offset) {
+      viewMonth += offset;
+      if (viewMonth < 0) {
+        viewMonth = 11;
+        viewYear--;
+      } else if (viewMonth > 11) {
+        viewMonth = 0;
+        viewYear++;
+      }
+      renderCalendar();
+    }
+
+    // Month Navigation for Board
+    function changeBoardMonth(offset) {
+      boardMonth += offset;
+      if (boardMonth < 0) {
+        boardMonth = 11;
+        boardYear--;
+      } else if (boardMonth > 11) {
+        boardMonth = 0;
+        boardYear++;
+      }
+      renderRankingAndBoard();
+    }
+
+    // Month Navigation for Ranking
+    function changeRankingMonth(offset) {
+      rankingMonth += offset;
+      if (rankingMonth < 0) {
+        rankingMonth = 11;
+        rankingYear--;
+      } else if (rankingMonth > 11) {
+        rankingMonth = 0;
+        rankingYear++;
+      }
+      renderRankingAndBoard();
+    }
+
+    function setRankingMode(mode) {
+      rankingMode = mode;
+      const monthlyBtn = document.getElementById('rank-mode-monthly-btn');
+      const allBtn = document.getElementById('rank-mode-all-btn');
+      const monthCtrls = document.getElementById('ranking-month-ctrls');
+      const descText = document.getElementById('ranking-desc-text');
+
+      if (mode === 'monthly') {
+        monthlyBtn.className = "flex-1 py-1.5 rounded-lg font-bold text-white bg-indigo-600 transition shadow-xs text-center";
+        allBtn.className = "flex-1 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition text-center";
+        monthCtrls.classList.remove('hidden');
+        descText.innerHTML = "순위는 매월 말일까지 집계되고 <strong>매월 1일에 새롭게 시작</strong>됩니다. 상단 월 이동(◀ ▶)으로 지난 달 순위를 언제든 조회할 수 있습니다.";
+      } else {
+        allBtn.className = "flex-1 py-1.5 rounded-lg font-bold text-white bg-indigo-600 transition shadow-xs text-center";
+        monthlyBtn.className = "flex-1 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition text-center";
+        monthCtrls.classList.add('hidden');
+        descText.innerHTML = "시작일부터 지금까지 누적된 <strong>전체 통합 순위</strong>입니다. 모든 기간의 실천 횟수가 합산되어 표시됩니다.";
+      }
+      renderRankingAndBoard();
+    }
+
+    // Perfectly Aligned Calendar Generation
+    function renderCalendar() {
+      document.getElementById('calendar-month-label').textContent = `${viewYear}년 ${viewMonth + 1}월`;
+
+      const calGrid = document.getElementById('calendar-grid');
+      calGrid.innerHTML = '';
+
+      const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay(); // 0 is Sunday
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      // Today's ISO date string
+      const now = new Date();
+      const realTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // Empty padding cells for previous month days
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = "cal-cell opacity-0 pointer-events-none";
+        calGrid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayCell = document.createElement('div');
+        const isSelected = (dStr === selectedDateStr);
+        const isToday = (dStr === realTodayStr);
+        
+        const dataKey = `${targetUserId}_${dStr}`;
+        const record = habitsData[dataKey] || {};
+
+        let completedCount = 0;
+        if (record.bible) completedCount++;
+        if (record.prayer) completedCount++;
+        if (record.evangelism) completedCount++;
+        if (record.meeting) completedCount++;
+        const isAllDone = (completedCount === 4);
+
+        const currentDayOfWeek = new Date(viewYear, viewMonth, day).getDay();
+        const dateColorClass = currentDayOfWeek === 0 ? 'text-rose-400' : currentDayOfWeek === 6 ? 'text-indigo-400' : 'text-slate-700';
+
+        dayCell.className = `cal-cell cursor-pointer border ${
+          isToday ? 'today-marker ' : ''
+        }${
+          isSelected 
+            ? 'selected' 
+            : isAllDone
+              ? 'border-purple-200 bg-gradient-to-b from-[#faf5ff] to-[#fff0f5] shadow-xs hover:border-pink-300'
+              : 'border-slate-100 bg-[#fafafc] hover:bg-pink-50/30 hover:border-pink-200'
+        }`;
+        dayCell.onclick = () => selectDate(dStr);
+
+        // Fixed-Height Top Row: Date Number (Centered with consistent baseline)
+        const topRow = document.createElement('div');
+        topRow.className = "w-full h-5 flex items-center justify-between px-1 mb-0.5";
+        
+        const dateNum = document.createElement('span');
+        dateNum.className = `text-[11px] font-black ${isSelected ? 'text-purple-900 font-black' : dateColorClass}`;
+        dateNum.textContent = `${day}`;
+        topRow.appendChild(dateNum);
+
+        if (isAllDone) {
+          const starIcon = document.createElement('span');
+          starIcon.className = "text-[9px] animate-pulse leading-none";
+          starIcon.textContent = "🌸";
+          topRow.appendChild(starIcon);
+        } else if (completedCount > 0) {
+          const countBadge = document.createElement('span');
+          countBadge.className = "text-[8.5px] font-extrabold text-pink-400 leading-none";
+          countBadge.textContent = `${completedCount}/4`;
+          topRow.appendChild(countBadge);
+        } else {
+          // Empty placeholder to preserve flex layout balance
+          const spacer = document.createElement('span');
+          spacer.className = "w-2";
+          topRow.appendChild(spacer);
+        }
+
+        dayCell.appendChild(topRow);
+
+        // Fixed-Height 4 Habit Rows: 말씀, 기도, 전도, 모임
+        const habitContainer = document.createElement('div');
+        habitContainer.className = "w-full flex flex-col justify-start items-center";
+
+        HABIT_CONFIG.forEach(it => {
+          const rowItem = document.createElement('div');
+          rowItem.className = "habit-row-item";
+
+          const isDone = !!record[it.key];
+          const badge = document.createElement('span');
+          badge.textContent = it.label; // Exactly 2 characters for strict alignment
+          badge.className = isDone ? `done-badge ${it.doneClass}` : 'undone-badge';
+
+          rowItem.appendChild(badge);
+          habitContainer.appendChild(rowItem);
+        });
+
+        dayCell.appendChild(habitContainer);
+        calGrid.appendChild(dayCell);
+      }
+    }
+
+    function selectDate(dStr) {
+      selectedDateStr = dStr;
+      renderCalendar();
+      renderHabitCard();
+    }
+
+    // Habit Card Updates
+    function renderHabitCard() {
+      const activeName = targetUserId || currentUser.id;
+      document.getElementById('selected-date-heading').textContent = `${activeName}님의 ${selectedDateStr} 습관 체크`;
+
+      const dataKey = `${activeName}_${selectedDateStr}`;
+      const record = habitsData[dataKey] || { bible: false, prayer: false, evangelism: false, meeting: false, note: "" };
+
+      HABIT_CONFIG.forEach(item => {
+        updateCardUI(item.key, record[item.key]);
+      });
+
+      document.getElementById('habit-note-input').value = record.note || "";
+    }
+
+    function updateCardUI(type, isDone) {
+      const card = document.getElementById(`habit-card-${type}`);
+      if (!card) return;
+      const statusText = card.querySelector('.status-text');
+      const badge = card.querySelector('span:first-child');
+
+      if (isDone) {
+        card.className = "habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-indigo-500 bg-[#5d5fef] text-white shadow-md active:scale-95";
+        badge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white mb-1";
+        statusText.className = "font-black text-sm text-white status-text";
+        statusText.textContent = "✓ 달성 완료";
+      } else {
+        card.className = "habit-btn rounded-2xl p-3.5 flex flex-col items-center justify-center cursor-pointer transition border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95";
+        badge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 mb-1";
+        statusText.className = "font-extrabold text-sm text-slate-500 status-text";
+        statusText.textContent = "미달성";
+      }
+    }
+
+    function toggleHabit(type) {
+      if (currentUser.role !== "관리자" && targetUserId !== currentUser.id) {
+        alert("다른 사용자의 기록은 수정할 수 없습니다.");
+        return;
+      }
+
+      const activeName = targetUserId || currentUser.id;
+      const dataKey = `${activeName}_${selectedDateStr}`;
+      if (!habitsData[dataKey]) {
+        habitsData[dataKey] = { bible: false, prayer: false, evangelism: false, meeting: false, note: "" };
+      }
+
+      habitsData[dataKey][type] = !habitsData[dataKey][type];
+      saveHabitRecord(dataKey, habitsData[dataKey]);
+
+      renderHabitCard();
+      renderCalendar();
+      renderRankingAndBoard();
+    }
+
+    function saveDailyNote() {
+      const activeName = targetUserId || currentUser.id;
+      const dataKey = `${activeName}_${selectedDateStr}`;
+      const noteVal = document.getElementById('habit-note-input').value.trim();
+
+      if (!habitsData[dataKey]) {
+        habitsData[dataKey] = { bible: false, prayer: false, evangelism: false, meeting: false, note: "" };
+      }
+      habitsData[dataKey].note = noteVal;
+      saveHabitRecord(dataKey, habitsData[dataKey]);
+      alert("묵상이 저장되었습니다.");
+    }
+
+    function saveHabitRecord(key, data) {
+      localStorage.setItem('local_habits', JSON.stringify(habitsData));
+      if (db) {
+        db.collection("habits").doc(key).set(data, { merge: true }).catch(err => {
+          console.error("Firestore save error:", err);
+        });
+      }
+    }
+
+    function loadLocalHabits() {
+      const local = localStorage.getItem('local_habits');
+      if (local) {
+        try {
+          habitsData = JSON.parse(local);
+        } catch (e) {}
+      }
+    }
+
+    // Monthly Calculation (From 1st to last day of specified month)
+    function calculateMonthlyScores(year, month) {
+      const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const scores = {};
+      AUTHORIZED_USERS.forEach(u => {
+        scores[u.id] = { id: u.id, role: u.role, bible: 0, prayer: 0, evangelism: 0, meeting: 0, total: 0 };
+      });
+
+      Object.entries(habitsData).forEach(([key, val]) => {
+        const [userId, dateStr] = key.split('_');
+        if (dateStr && dateStr.startsWith(prefix) && scores[userId]) {
+          if (val.bible) scores[userId].bible += 1;
+          if (val.prayer) scores[userId].prayer += 1;
+          if (val.evangelism) scores[userId].evangelism += 1;
+          if (val.meeting) scores[userId].meeting += 1;
+        }
+      });
+
+      Object.values(scores).forEach(s => {
+        s.total = s.bible + s.prayer + s.evangelism + s.meeting;
+      });
+
+      return Object.values(scores).sort((a, b) => b.total - a.total);
+    }
+
+    // All-time Cumulative Calculation
+    function calculateCumulativeScores() {
+      const scores = {};
+      AUTHORIZED_USERS.forEach(u => {
+        scores[u.id] = { id: u.id, role: u.role, bible: 0, prayer: 0, evangelism: 0, meeting: 0, total: 0 };
+      });
+
+      Object.entries(habitsData).forEach(([key, val]) => {
+        const [userId] = key.split('_');
+        if (scores[userId]) {
+          if (val.bible) scores[userId].bible += 1;
+          if (val.prayer) scores[userId].prayer += 1;
+          if (val.evangelism) scores[userId].evangelism += 1;
+          if (val.meeting) scores[userId].meeting += 1;
+        }
+      });
+
+      Object.values(scores).forEach(s => {
+        s.total = s.bible + s.prayer + s.evangelism + s.meeting;
+      });
+
+      return Object.values(scores).sort((a, b) => b.total - a.total);
+    }
+
+    function renderRankingAndBoard() {
+      // 1. Ranking Tab: Monthly (Resets on 1st) or All-Time Cumulative
+      let rankingScores = [];
+      if (rankingMode === 'monthly') {
+        document.getElementById('ranking-month-title').textContent = `${rankingYear}년 ${rankingMonth + 1}월`;
+        document.getElementById('ranking-month-badge').textContent = `${rankingMonth + 1}월`;
+        rankingScores = calculateMonthlyScores(rankingYear, rankingMonth);
+      } else {
+        document.getElementById('ranking-month-title').textContent = '역대 전체';
+        rankingScores = calculateCumulativeScores();
+      }
+
+      const rankingList = document.getElementById('ranking-list');
+      rankingList.innerHTML = '';
+      rankingScores.forEach((s, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}위`;
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3 rounded-2xl bg-[#1a1e2e] border border-slate-800 text-xs";
+        item.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="w-7 text-center font-bold text-sm">${medal}</span>
+            <span class="font-bold text-white text-sm">${s.id}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.role === '관리자' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-700 text-slate-300'}">${s.role}</span>
+          </div>
+          <div class="text-right">
+            <span class="font-black text-indigo-400 text-base">${s.total}</span>
+            <span class="text-slate-400 text-xs">회</span>
+          </div>
+        `;
+        rankingList.appendChild(item);
+      });
+
+      // 2. Monthly Visual Board Tab
+      document.getElementById('board-month-title').textContent = `${boardYear}년 ${boardMonth + 1}월`;
+      document.getElementById('board-month-badge').textContent = `${boardMonth + 1}월`;
+
+      const daysInBoardMonth = new Date(boardYear, boardMonth + 1, 0).getDate();
+      const maxPossibleHabitsPerMonth = daysInBoardMonth * 4; // 4 categories per day
+
+      const monthlyScores = calculateMonthlyScores(boardYear, boardMonth);
+      const myScore = currentUser ? (monthlyScores.find(s => s.id === currentUser.id) || { bible: 0, prayer: 0, evangelism: 0, meeting: 0, total: 0 }) : { bible: 0, prayer: 0, evangelism: 0, meeting: 0, total: 0 };
+
+      // My Progress Gauge Calculation
+      const myRate = Math.min(100, Math.round((myScore.total / maxPossibleHabitsPerMonth) * 100));
+      document.getElementById('board-my-rate').textContent = `${myRate}% 실천 (${myScore.total}/${maxPossibleHabitsPerMonth})`;
+      document.getElementById('board-my-progressbar').style.width = `${myRate}%`;
+
+      // 4 Categories Bars for Me
+      const biblePct = Math.min(100, Math.round((myScore.bible / daysInBoardMonth) * 100));
+      const prayerPct = Math.min(100, Math.round((myScore.prayer / daysInBoardMonth) * 100));
+      const evangelismPct = Math.min(100, Math.round((myScore.evangelism / daysInBoardMonth) * 100));
+      const meetingPct = Math.min(100, Math.round((myScore.meeting / daysInBoardMonth) * 100));
+
+      document.getElementById('my-stat-bible').textContent = `${myScore.bible}회 (${biblePct}%)`;
+      document.getElementById('my-bar-bible').style.width = `${biblePct}%`;
+
+      document.getElementById('my-stat-prayer').textContent = `${myScore.prayer}회 (${prayerPct}%)`;
+      document.getElementById('my-bar-prayer').style.width = `${prayerPct}%`;
+
+      document.getElementById('my-stat-evangelism').textContent = `${myScore.evangelism}회 (${evangelismPct}%)`;
+      document.getElementById('my-bar-evangelism').style.width = `${evangelismPct}%`;
+
+      document.getElementById('my-stat-meeting').textContent = `${myScore.meeting}회 (${meetingPct}%)`;
+      document.getElementById('my-bar-meeting').style.width = `${meetingPct}%`;
+
+      document.getElementById('my-total-month-count').textContent = `총 ${myScore.total}회 실천 (한달 ${daysInBoardMonth}일 기준)`;
+
+      // All Members Visual Comparison Cards
+      const membersContainer = document.getElementById('board-members-cards');
+      membersContainer.innerHTML = '';
+
+      monthlyScores.forEach((s, idx) => {
+        const totalPct = Math.min(100, Math.round((s.total / maxPossibleHabitsPerMonth) * 100));
+        const isMe = (currentUser && s.id === currentUser.id);
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-2xl border ${isMe ? 'bg-indigo-950/30 border-indigo-500/50' : 'bg-[#1a1e2e] border-slate-800'}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 text-center font-bold text-xs text-slate-400">${idx + 1}</span>
+              <span class="font-extrabold text-sm text-white ${isMe ? 'text-indigo-300' : ''}">
+                ${s.id} ${isMe ? '<span class="text-[10px] bg-indigo-600/40 text-indigo-200 px-1.5 py-0.5 rounded-md font-normal">나</span>' : ''}
+              </span>
+            </div>
+            <div class="text-right">
+              <span class="font-black text-sm text-white">${s.total}회</span>
+              <span class="text-[11px] text-slate-400 font-medium">(${totalPct}%)</span>
+            </div>
+          </div>
+
+          <!-- Overall month progress bar for member -->
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-2.5">
+            <div class="h-full rounded-full bg-indigo-500 transition-all duration-300" style="width: ${totalPct}%"></div>
+          </div>
+
+          <!-- 4 Category Mini Chips -->
+          <div class="grid grid-cols-4 gap-1.5 text-center text-[10px]">
+            <div class="bg-slate-900/60 p-1 rounded-lg border border-slate-800">
+              <div class="text-indigo-400 font-bold">말씀</div>
+              <div class="font-extrabold text-slate-200 mt-0.5">${s.bible}회</div>
+            </div>
+            <div class="bg-slate-900/60 p-1 rounded-lg border border-slate-800">
+              <div class="text-emerald-400 font-bold">기도</div>
+              <div class="font-extrabold text-slate-200 mt-0.5">${s.prayer}회</div>
+            </div>
+            <div class="bg-slate-900/60 p-1 rounded-lg border border-slate-800">
+              <div class="text-amber-400 font-bold">전도</div>
+              <div class="font-extrabold text-slate-200 mt-0.5">${s.evangelism}회</div>
+            </div>
+            <div class="bg-slate-900/60 p-1 rounded-lg border border-slate-800">
+              <div class="text-purple-400 font-bold">모임</div>
+              <div class="font-extrabold text-slate-200 mt-0.5">${s.meeting}회</div>
+            </div>
+          </div>
+        `;
+        membersContainer.appendChild(card);
+      });
+    }
+
+    // Tabs Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-[#5d5fef]', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activePane = document.getElementById(`tab-${tabId}`);
+      if (activePane) activePane.classList.remove('hidden');
+
+      const targetBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+      if (targetBtn) {
+        targetBtn.classList.add('active', 'bg-[#5d5fef]', 'text-white');
+        targetBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabId === 'board' || tabId === 'ranking') {
+        renderRankingAndBoard();
+      }
+    }
+
+    // Notice Board
+    function postNotice() {
+      const content = document.getElementById('notice-input').value.trim();
+      if (!content) return;
+
+      const noticeObj = {
+        author: currentUser.id,
+        content: content,
+        createdAt: new Date().toISOString(),
+        dateStr: new Date().toLocaleDateString('ko-KR')
+      };
+
+      if (db) {
+        db.collection("notices").add(noticeObj);
+      } else {
+        notices.unshift(noticeObj);
+        localStorage.setItem('local_notices', JSON.stringify(notices));
+        renderNotices();
+      }
+      document.getElementById('notice-input').value = '';
+    }
+
+    function renderNotices() {
+      const container = document.getElementById('notice-list');
+      container.innerHTML = '';
+      notices.forEach(n => {
+        const card = document.createElement('div');
+        card.className = "bg-[#1a1e2e] border border-slate-800 rounded-2xl p-3 text-xs";
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-1 text-slate-400 text-[11px]">
+            <span class="font-bold text-slate-200">✍️ ${n.author}</span>
+            <span>${n.dateStr || ''}</span>
+          </div>
+          <p class="text-slate-200 leading-relaxed">${n.content}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Quick Utility Buttons
+    function exportToExcel() {
+      const scores = calculateMonthlyScores(boardYear, boardMonth);
+      let csvContent = `\uFEFF${boardYear}년 ${boardMonth + 1}월 신앙습관 달성현황\n`;
+      csvContent += "이름,말씀,기도,전도,모임,총달성\n";
+      scores.forEach(s => {
+        csvContent += `"${s.id}",${s.bible},${s.prayer},${s.evangelism},${s.meeting},${s.total}\n`;
+      });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `신앙습관_${boardYear}_${boardMonth + 1}월_현황.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function captureScreen() {
+      alert("스마트폰 화면 캡처 기능을 이용하시거나 브라우저 인쇄 기능을 활용해 주세요.");
+    }
+
+    function backupData() {
+      const backup = {
+        timestamp: new Date().toISOString(),
+        habits: habitsData,
+        users: AUTHORIZED_USERS
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `habits_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    }
+
+
+    // User Management Modal Functions (Admin Only)
+    function openUserManagementModal() {
+      if (!currentUser || currentUser.role !== "관리자") {
+        alert("관리자만 접근할 수 있습니다.");
+        return;
+      }
+      renderUserManagementList();
+      document.getElementById('user-mgmt-modal').classList.remove('hidden');
+    }
+
+    function closeUserManagementModal() {
+      document.getElementById('user-mgmt-modal').classList.add('hidden');
+      const idInput = document.getElementById('new-user-id');
+      const pwInput = document.getElementById('new-user-pw');
+      if (idInput) idInput.value = '';
+      if (pwInput) pwInput.value = '';
+    }
+
+    function renderUserManagementList() {
+      const listEl = document.getElementById('user-mgmt-list');
+      const countEl = document.getElementById('mgmt-member-count');
+      if (!listEl) return;
+
+      countEl.textContent = `${AUTHORIZED_USERS.length}명`;
+      listEl.innerHTML = '';
+
+      AUTHORIZED_USERS.forEach(u => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-2.5 rounded-xl bg-[#1a1e2e] border border-slate-800";
+        const isSelf = currentUser && currentUser.id === u.id;
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-white text-xs">${u.id}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${
+              u.role === '관리자' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold' : 'bg-slate-700 text-slate-300'
+            }">${u.role}</span>
+            <span class="text-[10px] text-slate-500 font-mono">pw: ${u.pw}</span>
+          </div>
+          <div>
+            ${
+              isSelf
+                ? '<span class="text-[10px] text-slate-500">(본인)</span>'
+                : `<button onclick="deleteUser('${u.id}')" class="text-rose-400 hover:text-rose-300 text-[11px] px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30 transition">삭제</button>`
+            }
+          </div>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    async function addNewUser(e) {
+      e.preventDefault();
+      if (!currentUser || currentUser.role !== "관리자") {
+        alert("관리자만 회원을 추가할 수 있습니다.");
+        return;
+      }
+
+      const id = document.getElementById('new-user-id').value.trim();
+      const pw = document.getElementById('new-user-pw').value.trim();
+      const role = document.getElementById('new-user-role').value;
+
+      if (!id || !pw) {
+        alert("이름과 비밀번호를 모두 입력해주세요.");
+        return;
+      }
+
+      if (AUTHORIZED_USERS.some(u => u.id === id)) {
+        alert("이미 등록되어 있는 회원 이름(아이디)입니다.");
+        return;
+      }
+
+      const newUser = { id, pw, role };
+      AUTHORIZED_USERS.push(newUser);
+      saveLocalUsers();
+
+      if (db) {
+        try {
+          await db.collection("users").doc(id).set({
+            id,
+            pw,
+            role,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          alert(`${id}님이 성공적으로 등록되었습니다.`);
+        } catch (err) {
+          console.error("User save error:", err);
+          alert("클라우드 저장 중 오류가 발생했습니다: " + err.message);
+        }
+      } else {
+        alert(`${id}님이 로컬에 등록되었습니다.`);
+      }
+
+      document.getElementById('new-user-id').value = '';
+      document.getElementById('new-user-pw').value = '';
+      populateAdminSelector();
+      renderUserManagementList();
+      renderCalendar();
+      renderRankingAndBoard();
+    }
+
+    async function deleteUser(userId) {
+      if (!currentUser || currentUser.role !== "관리자") {
+        alert("관리자만 회원을 삭제할 수 있습니다.");
+        return;
+      }
+
+      if (userId === currentUser.id) {
+        alert("자기 자신은 삭제할 수 없습니다.");
+        return;
+      }
+
+      if (!confirm(`${userId} 구역원을 정말 삭제하시겠습니까?\n(해당 사용자의 기존 습관 기록은 유지됩니다)`)) {
+        return;
+      }
+
+      AUTHORIZED_USERS = AUTHORIZED_USERS.filter(u => u.id !== userId);
+      saveLocalUsers();
+
+      if (db) {
+        try {
+          await db.collection("users").doc(userId).delete();
+        } catch (err) {
+          console.error("User delete error:", err);
+        }
+      }
+
+      if (targetUserId === userId) {
+        targetUserId = currentUser.id;
+      }
+
+      populateAdminSelector();
+      renderUserManagementList();
+      renderCalendar();
+      renderRankingAndBoard();
+    }
+
+    function toggleAdminMode() {
+      isAdminMode = !isAdminMode;
+      alert(`관리자 모드가 ${isAdminMode ? '활성화' : '비활성화'} 되었습니다.`);
+    }
+
+    // Config Modal
+    function openConfigModal() {
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+    function closeConfigModal() {
+      document.getElementById('config-modal').classList.add('hidden');
+    }
+    function saveFirebaseConfig() {
+      const val = document.getElementById('firebase-config-json').value.trim();
+      try {
+        const parsed = JSON.parse(val);
+        localStorage.setItem('firebase_app_config', JSON.stringify(parsed));
+        closeConfigModal();
+        alert("Firebase 설정이 저장되었습니다. 페이지를 새로고침합니다.");
+        window.location.reload();
+      } catch (e) {
+        alert("올바른 JSON 형식이 아닙니다. 확인 후 다시 입력해주세요.");
+      }
+    }
+
+    // Auto-login session restore
+    window.addEventListener('DOMContentLoaded', () => {
+      initFirebase();
+      const savedUser = sessionStorage.getItem('current_user');
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          targetUserId = currentUser.id;
+          showApp();
+        } catch (e) {}
+      }
+    });
+  </script>
+</body>
+</html>

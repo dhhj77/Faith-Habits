@@ -51,13 +51,44 @@
       box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.4) !important;
       z-index: 2;
     }
+    /* Blinking Today Marker */
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        border-color: #ef4444;
+      }
+      70% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+        border-color: #f87171;
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        border-color: #ef4444;
+      }
+    }
+    @keyframes blink-badge {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.9); }
+    }
+    .cal-cell.today-marker {
+      animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      border: 1.8px solid #ef4444 !important;
+      position: relative;
+    }
     .cal-cell.today-marker::after {
-      content: '●';
+      content: '오늘';
       position: absolute;
-      top: 1.5px;
-      right: 2.5px;
-      font-size: 6px;
-      color: #f43f5e;
+      top: 1px;
+      right: 1.5px;
+      font-size: 6.5px;
+      font-weight: 900;
+      line-height: 8px;
+      padding: 0 2px;
+      border-radius: 3px;
+      background-color: #ef4444;
+      color: #ffffff;
+      animation: blink-badge 1.4s infinite ease-in-out;
+      z-index: 3;
     }
     /* Compact 4-Habit Mini Badges [말씀, 기도, 전도, 모임] */
     .mini-habit-col {
@@ -183,10 +214,11 @@
 
     <!-- ACTION BUTTON BAR -->
     <div class="flex items-center justify-between gap-1.5 pt-1">
-      <div class="flex items-center space-x-1.5 bg-[#252b3e] border border-[#38425d] px-2.5 py-1.5 rounded-xl">
-        <div class="w-6 h-6 rounded-full bg-amber-200 text-slate-800 flex items-center justify-center text-xs">🐻</div>
-        <span class="text-xs font-bold text-slate-200" id="user-display-name">사용자님</span>
-      </div>
+      <button onclick="openProfileModal()" class="flex items-center space-x-1.5 bg-[#252b3e] hover:bg-[#323952] active:scale-95 border border-[#38425d] hover:border-indigo-400/50 px-2.5 py-1.5 rounded-xl transition shadow-xs group" title="내 프로필/이름 수정">
+        <div id="user-avatar-display" class="w-6 h-6 rounded-full bg-amber-200 text-slate-800 flex items-center justify-center text-xs overflow-hidden font-bold">🐻</div>
+        <span class="text-xs font-bold text-slate-200 group-hover:text-indigo-200" id="user-display-name">사용자님</span>
+        <span class="text-[10px] text-slate-400 group-hover:text-amber-300">✏️</span>
+      </button>
 
       <div class="flex items-center space-x-1">
         <button onclick="exportToExcel()" class="bg-[#196342] hover:bg-[#145337] text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-emerald-600/40 flex items-center space-x-1 shadow-sm">
@@ -522,6 +554,70 @@
 
   </div>
 
+  <!-- PROFILE EDIT MODAL (FOR ALL USERS) -->
+  <div id="profile-edit-modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 w-full max-w-sm text-white shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-indigo-300 flex items-center space-x-1.5">
+          <span>✏️ 내 프로필 수정</span>
+        </h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">&times;</button>
+      </div>
+      <p class="text-xs text-slate-300 mb-4">자신의 이름(표시명)과 사진(아바타)을 변경할 수 있습니다.</p>
+
+      <form onsubmit="saveUserProfile(event)" class="space-y-3">
+        <!-- Avatar Preview and Selection -->
+        <div class="flex flex-col items-center justify-center space-y-2 pb-2 border-b border-slate-700/60">
+          <div id="modal-avatar-preview" class="w-16 h-16 rounded-full bg-indigo-950 border-2 border-indigo-400 flex items-center justify-center text-3xl overflow-hidden shadow-md">
+            🐻
+          </div>
+          <span class="text-[11px] text-slate-400">아래 캐릭터 아이콘 또는 사진 URL 선택</span>
+          
+          <!-- Emoji Avatar Quick Presets -->
+          <div class="flex items-center space-x-2 pt-1">
+            <button type="button" onclick="selectAvatarPreset('🐻')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🐻</button>
+            <button type="button" onclick="selectAvatarPreset('🐑')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🐑</button>
+            <button type="button" onclick="selectAvatarPreset('🕊️')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🕊️</button>
+            <button type="button" onclick="selectAvatarPreset('🌸')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🌸</button>
+            <button type="button" onclick="selectAvatarPreset('⭐')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">⭐</button>
+            <button type="button" onclick="selectAvatarPreset('🌱')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🌱</button>
+          </div>
+        </div>
+
+        <!-- Photo URL Input (Optional) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">사진 URL (직접 입력 시)</label>
+          <input type="url" id="profile-photo-url" placeholder="https://example.com/photo.jpg (선택)"
+            oninput="previewPhotoUrl(this.value)"
+            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Name Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">이름 (표시명)</label>
+          <input type="text" id="profile-edit-name" required placeholder="변경할 이름 입력"
+            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Password (Optional Change) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">비밀번호 (변경 시에만 입력)</label>
+          <input type="text" id="profile-edit-pw" placeholder="기존 비밀번호 유지"
+            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeProfileModal()" class="px-3.5 py-1.5 rounded-xl text-xs bg-slate-700 hover:bg-slate-600 text-slate-200">
+            취소
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition active:scale-95 shadow-xs">
+            저장하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- USER MANAGEMENT MODAL (ADMIN ONLY) -->
   <div id="user-mgmt-modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 w-full max-w-md text-white shadow-2xl max-h-[90vh] flex flex-col">
@@ -718,7 +814,9 @@
             usersList.push({
               id: data.id || doc.id,
               pw: String(data.pw || ""),
-              role: data.role || "회원"
+              role: data.role || "회원",
+              name: data.name || data.id || doc.id,
+              avatar: data.avatar || "🐻"
             });
           });
           AUTHORIZED_USERS = usersList;
@@ -818,8 +916,16 @@
       document.getElementById('login-section').classList.add('hidden');
       document.getElementById('app-container').classList.remove('hidden');
 
-      document.getElementById('user-display-name').textContent = currentUser.id + "님";
-      document.getElementById('board-my-name').textContent = currentUser.id;
+      // Auto-select today's date upon launch
+      const n = new Date();
+      viewYear = n.getFullYear();
+      viewMonth = n.getMonth();
+      selectedDateStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+
+      const dispName = currentUser.name || currentUser.id;
+      document.getElementById('user-display-name').textContent = dispName + "님";
+      document.getElementById('board-my-name').textContent = dispName;
+      updateAvatarUI(currentUser.avatar || "🐻");
       
       if (currentUser.role === "관리자") {
         document.getElementById('admin-toggle-btn').classList.remove('hidden');
@@ -1375,6 +1481,124 @@
       a.click();
     }
 
+
+
+    // Profile Edit Functions (For All Users)
+    let selectedAvatarValue = "🐻";
+
+    function updateAvatarUI(avatarVal) {
+      const avatarEl = document.getElementById('user-avatar-display');
+      if (!avatarEl) return;
+      if (avatarVal && (avatarVal.startsWith('http://') || avatarVal.startsWith('https://') || avatarVal.startsWith('data:image'))) {
+        avatarEl.innerHTML = `<img src="${avatarVal}" class="w-full h-full object-cover">`;
+      } else {
+        avatarEl.textContent = avatarVal || "🐻";
+      }
+    }
+
+    function selectAvatarPreset(emoji) {
+      selectedAvatarValue = emoji;
+      document.getElementById('profile-photo-url').value = '';
+      const previewEl = document.getElementById('modal-avatar-preview');
+      previewEl.innerHTML = emoji;
+    }
+
+    function previewPhotoUrl(url) {
+      const previewEl = document.getElementById('modal-avatar-preview');
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        selectedAvatarValue = url;
+        previewEl.innerHTML = `<img src="${url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.textContent='🐻';">`;
+      } else {
+        selectedAvatarValue = "🐻";
+        previewEl.textContent = "🐻";
+      }
+    }
+
+    function openProfileModal() {
+      if (!currentUser) return;
+      const nameInput = document.getElementById('profile-edit-name');
+      const pwInput = document.getElementById('profile-edit-pw');
+      const urlInput = document.getElementById('profile-photo-url');
+      const previewEl = document.getElementById('modal-avatar-preview');
+
+      nameInput.value = currentUser.name || currentUser.id;
+      pwInput.value = '';
+      
+      const curAvatar = currentUser.avatar || "🐻";
+      selectedAvatarValue = curAvatar;
+
+      if (curAvatar.startsWith('http://') || curAvatar.startsWith('https://')) {
+        urlInput.value = curAvatar;
+        previewEl.innerHTML = `<img src="${curAvatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.textContent='🐻';">`;
+      } else {
+        urlInput.value = '';
+        previewEl.textContent = curAvatar;
+      }
+
+      document.getElementById('profile-edit-modal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-edit-modal').classList.add('hidden');
+    }
+
+    async function saveUserProfile(e) {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const newName = document.getElementById('profile-edit-name').value.trim();
+      const newPw = document.getElementById('profile-edit-pw').value.trim();
+      const newAvatar = selectedAvatarValue || "🐻";
+
+      if (!newName) {
+        alert("이름을 입력해주세요.");
+        return;
+      }
+
+      const oldId = currentUser.id;
+      currentUser.name = newName;
+      currentUser.avatar = newAvatar;
+      if (newPw) {
+        currentUser.pw = newPw;
+      }
+
+      // Update in AUTHORIZED_USERS array
+      const userIndex = AUTHORIZED_USERS.findIndex(u => u.id === oldId);
+      if (userIndex !== -1) {
+        AUTHORIZED_USERS[userIndex].name = newName;
+        AUTHORIZED_USERS[userIndex].avatar = newAvatar;
+        if (newPw) AUTHORIZED_USERS[userIndex].pw = newPw;
+      }
+      saveLocalUsers();
+      localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+      // Sync with Firestore
+      if (db) {
+        try {
+          const updateData = {
+            name: newName,
+            avatar: newAvatar,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if (newPw) updateData.pw = newPw;
+          await db.collection("users").doc(oldId).set(updateData, { merge: true });
+        } catch (err) {
+          console.error("Profile sync error:", err);
+        }
+      }
+
+      // Update UI
+      document.getElementById('user-display-name').textContent = newName + "님";
+      document.getElementById('board-my-name').textContent = newName;
+      updateAvatarUI(newAvatar);
+
+      closeProfileModal();
+      populateAdminSelector();
+      renderHabitCard();
+      renderCalendar();
+      renderRankingAndBoard();
+      alert("프로필이 성공적으로 변경되었습니다.");
+    }
 
     // User Management Modal Functions (Admin Only)
     function openUserManagementModal() {

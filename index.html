@@ -28,58 +28,63 @@
       box-shadow: 0 15px 35px -5px rgba(129, 140, 248, 0.12), 0 5px 15px -3px rgba(244, 114, 182, 0.08);
     }
     .cal-cell {
-      min-height: 48px;
+      min-height: 56px;
       transition: all 0.15s ease;
-      border-radius: 0.75rem;
+      border-radius: 0.55rem;
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 3px 1px 4px 1px;
+      justify-content: flex-start;
+      padding: 2px 1px 2px 1px;
     }
     .cal-cell:hover {
       transform: translateY(-1px);
     }
     .cal-cell:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
     }
     .cal-cell.selected {
-      border: 2px solid #818cf8 !important;
+      border: 2px solid #6366f1 !important;
       background: linear-gradient(145deg, #f5f3ff 0%, #ede9fe 100%) !important;
-      box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.3) !important;
-      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 4px 10px -2px rgba(99, 102, 241, 0.35) !important;
       z-index: 2;
     }
     .cal-cell.today-marker::after {
       content: '●';
       position: absolute;
-      top: 1.5px;
-      right: 3px;
-      font-size: 6px;
+      top: 1px;
+      right: 2px;
+      font-size: 5px;
       color: #f43f5e;
     }
-    /* Compact Dots for Mobile Screen Visibility */
-    .habit-dots-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2.5px;
+    /* Compact 4-Habit Mini Badges [말씀, 기도, 전도, 모임] */
+    .mini-habit-col {
       width: 100%;
-      height: 9px;
-      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5px;
+      margin-top: 1px;
     }
-    .habit-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 9999px;
-      display: inline-block;
+    .mini-badge {
+      display: block;
+      width: 96%;
+      height: 9.5px;
+      line-height: 9.5px;
+      font-size: 7.5px;
+      font-weight: 800;
+      text-align: center;
+      border-radius: 2px;
+      letter-spacing: -0.7px;
+      white-space: nowrap;
+      overflow: hidden;
     }
-    .dot-bible { background-color: #4f46e5; }
-    .dot-prayer { background-color: #10b981; }
-    .dot-evangelism { background-color: #f59e0b; }
-    .dot-meeting { background-color: #a855f7; }
-    .dot-empty { background-color: #e2e8f0; }
+    .mini-bible-done { background-color: #4f46e5; color: #ffffff; }
+    .mini-prayer-done { background-color: #059669; color: #ffffff; }
+    .mini-evangelism-done { background-color: #d97706; color: #ffffff; }
+    .mini-meeting-done { background-color: #9333ea; color: #ffffff; }
+    .mini-undone { background-color: #f1f5f9; color: #94a3b8; font-weight: 500; }
 
     /* Hide scrollbars */
     ::-webkit-scrollbar {
@@ -703,7 +708,7 @@
             const updatedMe = AUTHORIZED_USERS.find(u => u.id === currentUser.id);
             if (updatedMe) {
               currentUser = updatedMe;
-              sessionStorage.setItem('current_user', JSON.stringify(updatedMe));
+              localStorage.setItem('current_user', JSON.stringify(updatedMe));
             }
           }
 
@@ -784,7 +789,7 @@
       errBox.textContent = "";
       currentUser = foundUser;
       targetUserId = foundUser.id;
-      sessionStorage.setItem('current_user', JSON.stringify(foundUser));
+      localStorage.setItem('current_user', JSON.stringify(foundUser));
 
       showApp();
     }
@@ -830,7 +835,7 @@
     }
 
     function handleLogout() {
-      sessionStorage.removeItem('current_user');
+      localStorage.removeItem('current_user');
       currentUser = null;
       targetUserId = null;
       document.getElementById('login-username').value = '';
@@ -976,18 +981,19 @@
         }
         dayCell.appendChild(topRow);
 
-        // 4 Habit Dots for Compact Mobile View: 말씀(파랑), 기도(초록), 전도(주황), 모임(보라)
-        const dotsRow = document.createElement('div');
-        dotsRow.className = "habit-dots-row";
+        // Compact 4 Habit Text Badges: [말씀, 기도, 전도, 모임]
+        const badgeCol = document.createElement('div');
+        badgeCol.className = "mini-habit-col";
 
         HABIT_CONFIG.forEach(it => {
-          const dot = document.createElement('span');
+          const badge = document.createElement('span');
           const isDone = !!record[it.key];
-          dot.className = `habit-dot ${isDone ? 'dot-' + it.key : 'dot-empty'}`;
-          dotsRow.appendChild(dot);
+          badge.textContent = it.label; // 말씀, 기도, 전도, 모임
+          badge.className = `mini-badge ${isDone ? 'mini-' + it.key + '-done' : 'mini-undone'}`;
+          badgeCol.appendChild(badge);
         });
 
-        dayCell.appendChild(dotsRow);
+        dayCell.appendChild(badgeCol);
         calGrid.appendChild(dayCell);
       }
     }
@@ -1515,7 +1521,7 @@
     // Auto-login session restore
     window.addEventListener('DOMContentLoaded', () => {
       initFirebase();
-      const savedUser = sessionStorage.getItem('current_user');
+      const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         try {
           currentUser = JSON.parse(savedUser);

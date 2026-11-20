@@ -554,59 +554,55 @@
 
   </div>
 
-  <!-- PROFILE EDIT MODAL (FOR ALL USERS) -->
+  <!-- PROFILE EDIT MODAL (PHOTO & NAME ONLY) -->
   <div id="profile-edit-modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-[#242a3d] border border-[#333b52] rounded-3xl p-5 w-full max-w-sm text-white shadow-2xl flex flex-col">
-      <div class="flex justify-between items-center mb-3">
+      <div class="flex justify-between items-center mb-2">
         <h3 class="text-base font-bold text-indigo-300 flex items-center space-x-1.5">
-          <span>✏️ 내 프로필 수정</span>
+          <span>✏️ 프로필 사진 및 이름 변경</span>
         </h3>
         <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">&times;</button>
       </div>
-      <p class="text-xs text-slate-300 mb-4">자신의 이름(표시명)과 사진(아바타)을 변경할 수 있습니다.</p>
+      <p class="text-xs text-slate-400 mb-3.5 leading-relaxed">
+        스마트폰 앨범 사진 또는 캐릭터를 선택하고 표시될 이름을 변경할 수 있습니다.
+      </p>
 
-      <form onsubmit="saveUserProfile(event)" class="space-y-3">
-        <!-- Avatar Preview and Selection -->
-        <div class="flex flex-col items-center justify-center space-y-2 pb-2 border-b border-slate-700/60">
-          <div id="modal-avatar-preview" class="w-16 h-16 rounded-full bg-indigo-950 border-2 border-indigo-400 flex items-center justify-center text-3xl overflow-hidden shadow-md">
+      <form onsubmit="saveUserProfile(event)" class="space-y-3.5">
+        <!-- Avatar Preview & Upload -->
+        <div class="flex flex-col items-center justify-center space-y-2.5 pb-3 border-b border-slate-700/60">
+          <div id="modal-avatar-preview" class="w-20 h-20 rounded-full bg-[#1a1e2e] border-2 border-indigo-400 flex items-center justify-center text-4xl overflow-hidden shadow-lg relative">
             🐻
           </div>
-          <span class="text-[11px] text-slate-400">아래 캐릭터 아이콘 또는 사진 URL 선택</span>
+
+          <!-- Hidden File Input for Phone Album / Gallery -->
+          <input type="file" id="album-photo-input" accept="image/*" class="hidden" onchange="handleAlbumPhotoUpload(event)">
           
-          <!-- Emoji Avatar Quick Presets -->
-          <div class="flex items-center space-x-2 pt-1">
-            <button type="button" onclick="selectAvatarPreset('🐻')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🐻</button>
-            <button type="button" onclick="selectAvatarPreset('🐑')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🐑</button>
-            <button type="button" onclick="selectAvatarPreset('🕊️')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🕊️</button>
-            <button type="button" onclick="selectAvatarPreset('🌸')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🌸</button>
-            <button type="button" onclick="selectAvatarPreset('⭐')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">⭐</button>
-            <button type="button" onclick="selectAvatarPreset('🌱')" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm">🌱</button>
+          <button type="button" onclick="document.getElementById('album-photo-input').click()"
+            class="px-3.5 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-indigo-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition">
+            <span>📷</span>
+            <span>핸드폰 앨범에서 사진 선택</span>
+          </button>
+
+          <!-- Quick Emoji Presets -->
+          <div class="flex items-center space-x-2 pt-0.5">
+            <button type="button" onclick="selectAvatarPreset('🐻')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">🐻</button>
+            <button type="button" onclick="selectAvatarPreset('🐑')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">🐑</button>
+            <button type="button" onclick="selectAvatarPreset('🕊️')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">🕊️</button>
+            <button type="button" onclick="selectAvatarPreset('🌸')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">🌸</button>
+            <button type="button" onclick="selectAvatarPreset('⭐')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">⭐</button>
+            <button type="button" onclick="selectAvatarPreset('🌱')" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-sm active:scale-90 transition">🌱</button>
           </div>
         </div>
 
-        <!-- Photo URL Input (Optional) -->
+        <!-- Name Input Only (No Password Modification) -->
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">사진 URL (직접 입력 시)</label>
-          <input type="url" id="profile-photo-url" placeholder="https://example.com/photo.jpg (선택)"
-            oninput="previewPhotoUrl(this.value)"
-            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
+          <label class="block text-xs font-bold text-slate-200 mb-1">이름 (표시명)</label>
+          <input type="text" id="profile-edit-name" required placeholder="이름을 입력해주세요"
+            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500 font-semibold">
+          <p class="text-[10px] text-slate-500 mt-1">※ 비밀번호 변경은 관리자에게 문의해주세요.</p>
         </div>
 
-        <!-- Name Input -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">이름 (표시명)</label>
-          <input type="text" id="profile-edit-name" required placeholder="변경할 이름 입력"
-            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <!-- Password (Optional Change) -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">비밀번호 (변경 시에만 입력)</label>
-          <input type="text" id="profile-edit-pw" placeholder="기존 비밀번호 유지"
-            class="w-full text-xs p-2.5 bg-[#1a1e2e] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div class="flex justify-end space-x-2 pt-2">
+        <div class="flex justify-end space-x-2 pt-1">
           <button type="button" onclick="closeProfileModal()" class="px-3.5 py-1.5 rounded-xl text-xs bg-slate-700 hover:bg-slate-600 text-slate-200">
             취소
           </button>
@@ -1483,7 +1479,7 @@
 
 
 
-    // Profile Edit Functions (For All Users)
+    // Profile Edit Functions (Photo & Name Only, No PW Edit)
     let selectedAvatarValue = "🐻";
 
     function updateAvatarUI(avatarVal) {
@@ -1498,40 +1494,66 @@
 
     function selectAvatarPreset(emoji) {
       selectedAvatarValue = emoji;
-      document.getElementById('profile-photo-url').value = '';
       const previewEl = document.getElementById('modal-avatar-preview');
       previewEl.innerHTML = emoji;
     }
 
-    function previewPhotoUrl(url) {
-      const previewEl = document.getElementById('modal-avatar-preview');
-      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-        selectedAvatarValue = url;
-        previewEl.innerHTML = `<img src="${url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.textContent='🐻';">`;
-      } else {
-        selectedAvatarValue = "🐻";
-        previewEl.textContent = "🐻";
-      }
+    // Read and compress image directly from smartphone album/gallery
+    function handleAlbumPhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          // Resize image to max 200x200 to keep Firestore document size small and fast
+          const canvas = document.createElement('canvas');
+          const maxDim = 200;
+          let w = img.width;
+          let h = img.height;
+
+          if (w > h) {
+            if (w > maxDim) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            }
+          } else {
+            if (h > maxDim) {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          selectedAvatarValue = compressedDataUrl;
+
+          const previewEl = document.getElementById('modal-avatar-preview');
+          previewEl.innerHTML = `<img src="${compressedDataUrl}" class="w-full h-full object-cover">`;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function openProfileModal() {
       if (!currentUser) return;
       const nameInput = document.getElementById('profile-edit-name');
-      const pwInput = document.getElementById('profile-edit-pw');
-      const urlInput = document.getElementById('profile-photo-url');
       const previewEl = document.getElementById('modal-avatar-preview');
 
       nameInput.value = currentUser.name || currentUser.id;
-      pwInput.value = '';
       
       const curAvatar = currentUser.avatar || "🐻";
       selectedAvatarValue = curAvatar;
 
-      if (curAvatar.startsWith('http://') || curAvatar.startsWith('https://')) {
-        urlInput.value = curAvatar;
-        previewEl.innerHTML = `<img src="${curAvatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.textContent='🐻';">`;
+      if (curAvatar.startsWith('http://') || curAvatar.startsWith('https://') || curAvatar.startsWith('data:image')) {
+        previewEl.innerHTML = `<img src="${curAvatar}" class="w-full h-full object-cover">`;
       } else {
-        urlInput.value = '';
         previewEl.textContent = curAvatar;
       }
 
@@ -1547,7 +1569,6 @@
       if (!currentUser) return;
 
       const newName = document.getElementById('profile-edit-name').value.trim();
-      const newPw = document.getElementById('profile-edit-pw').value.trim();
       const newAvatar = selectedAvatarValue || "🐻";
 
       if (!newName) {
@@ -1558,30 +1579,24 @@
       const oldId = currentUser.id;
       currentUser.name = newName;
       currentUser.avatar = newAvatar;
-      if (newPw) {
-        currentUser.pw = newPw;
-      }
 
-      // Update in AUTHORIZED_USERS array
+      // Update in AUTHORIZED_USERS array (name and avatar only, password untouched)
       const userIndex = AUTHORIZED_USERS.findIndex(u => u.id === oldId);
       if (userIndex !== -1) {
         AUTHORIZED_USERS[userIndex].name = newName;
         AUTHORIZED_USERS[userIndex].avatar = newAvatar;
-        if (newPw) AUTHORIZED_USERS[userIndex].pw = newPw;
       }
       saveLocalUsers();
       localStorage.setItem('current_user', JSON.stringify(currentUser));
 
-      // Sync with Firestore
+      // Sync with Firestore (name & avatar only)
       if (db) {
         try {
-          const updateData = {
+          await db.collection("users").doc(oldId).set({
             name: newName,
             avatar: newAvatar,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          };
-          if (newPw) updateData.pw = newPw;
-          await db.collection("users").doc(oldId).set(updateData, { merge: true });
+          }, { merge: true });
         } catch (err) {
           console.error("Profile sync error:", err);
         }

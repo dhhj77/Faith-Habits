@@ -28,15 +28,16 @@
       box-shadow: 0 15px 35px -5px rgba(129, 140, 248, 0.12), 0 5px 15px -3px rgba(244, 114, 182, 0.08);
     }
     .cal-cell {
-      min-height: 56px;
+      min-height: 64px;
       transition: all 0.15s ease;
-      border-radius: 0.55rem;
+      border-radius: 0.6rem;
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 2px 1px 2px 1px;
+      padding: 2.5px 1.5px 3px 1.5px;
+      box-sizing: border-box;
     }
     .cal-cell:hover {
       transform: translateY(-1px);
@@ -47,15 +48,15 @@
     .cal-cell.selected {
       border: 2px solid #6366f1 !important;
       background: linear-gradient(145deg, #f5f3ff 0%, #ede9fe 100%) !important;
-      box-shadow: 0 4px 10px -2px rgba(99, 102, 241, 0.35) !important;
+      box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.4) !important;
       z-index: 2;
     }
     .cal-cell.today-marker::after {
       content: '●';
       position: absolute;
-      top: 1px;
-      right: 2px;
-      font-size: 5px;
+      top: 1.5px;
+      right: 2.5px;
+      font-size: 6px;
       color: #f43f5e;
     }
     /* Compact 4-Habit Mini Badges [말씀, 기도, 전도, 모임] */
@@ -64,27 +65,50 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5px;
+      gap: 1px;
       margin-top: 1px;
     }
     .mini-badge {
-      display: block;
-      width: 96%;
-      height: 9.5px;
-      line-height: 9.5px;
-      font-size: 7.5px;
-      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 11px;
+      line-height: 11px;
+      font-size: 8.5px;
+      font-weight: 900;
       text-align: center;
-      border-radius: 2px;
-      letter-spacing: -0.7px;
+      border-radius: 3px;
+      letter-spacing: -0.5px;
       white-space: nowrap;
-      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .mini-bible-done { background-color: #4f46e5; color: #ffffff; }
-    .mini-prayer-done { background-color: #059669; color: #ffffff; }
-    .mini-evangelism-done { background-color: #d97706; color: #ffffff; }
-    .mini-meeting-done { background-color: #9333ea; color: #ffffff; }
-    .mini-undone { background-color: #f1f5f9; color: #94a3b8; font-weight: 500; }
+    .mini-bible-done {
+      background-color: #4338ca !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 2px rgba(67, 56, 202, 0.25);
+    }
+    .mini-prayer-done {
+      background-color: #047857 !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 2px rgba(4, 120, 87, 0.25);
+    }
+    .mini-evangelism-done {
+      background-color: #b45309 !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 2px rgba(180, 83, 9, 0.25);
+    }
+    .mini-meeting-done {
+      background-color: #7e22ce !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 2px rgba(126, 34, 206, 0.25);
+    }
+    .mini-undone {
+      background-color: #f1f5f9 !important;
+      color: #64748b !important;
+      font-weight: 600;
+    }
 
     /* Hide scrollbars */
     ::-webkit-scrollbar {
@@ -224,13 +248,9 @@
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
-          <!-- Legend Dots -->
-          <div class="flex items-center space-x-1.5 text-[9px] text-slate-500 font-semibold">
-            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block"></span><span>말씀</span></span>
-            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span><span>기도</span></span>
-            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span><span>전도</span></span>
-            <span class="flex items-center space-x-0.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span><span>모임</span></span>
-          </div>
+          <span class="inline-flex items-center space-x-1 bg-indigo-50 text-indigo-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-indigo-200/60">
+            <span>✨</span><span>날짜 터치 후 아래서 체크</span>
+          </span>
         </div>
 
         <!-- DAY OF WEEK HEADERS (7 COLUMNS) -->

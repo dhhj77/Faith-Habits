@@ -686,7 +686,8 @@
       { id: "홍세관", pw: "940506", role: "회원" },
       { id: "김재윤", pw: "990730", role: "회원" },
       { id: "안하은", pw: "930711", role: "회원" },
-      { id: "신정수", pw: "940708", role: "회원" }
+      { id: "신정수", pw: "940708", role: "회원" },
+      { id: "조아름", pw: "123456", role: "회원" }
     ];
 
     // Embedded Firebase Config (Faith Habits)
@@ -774,24 +775,37 @@
       localStorage.setItem('faith_users_cache', JSON.stringify(AUTHORIZED_USERS));
     }
 
-    // Seed Excel 7 users to Firestore if collection is empty
+    // Ensure all default users exist in Firestore
     async function seedInitialUsersIfEmpty() {
       if (!db) return;
       try {
-        const snap = await db.collection("users").limit(1).get();
-        if (snap.empty) {
-          const batch = db.batch();
-          DEFAULT_USERS.forEach(u => {
+        const snap = await db.collection("users").get();
+        const existingMap = new Map();
+        snap.forEach(doc => {
+          existingMap.set(doc.id, doc.data());
+        });
+
+        const batch = db.batch();
+        let needCommit = false;
+
+        DEFAULT_USERS.forEach(u => {
+          if (!existingMap.has(u.id)) {
             const ref = db.collection("users").doc(u.id);
             batch.set(ref, {
               id: u.id,
+              name: u.id,
               pw: u.pw,
               role: u.role,
+              avatar: "🐻",
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-          });
+            needCommit = true;
+          }
+        });
+
+        if (needCommit) {
           await batch.commit();
-          console.log("Initial Excel users seeded to Firestore successfully.");
+          console.log("Missing default users automatically restored to Firestore.");
         }
       } catch (err) {
         console.warn("User seed note:", err);
@@ -801,22 +815,29 @@
     function setupRealtimeListeners() {
       if (!db) return;
 
-      // Realtime Users Sync
+      // Realtime Users Sync (Never lose users)
       db.collection("users").onSnapshot(snapshot => {
-        if (!snapshot.empty) {
-          const usersList = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            usersList.push({
-              id: data.id || doc.id,
-              pw: String(data.pw || ""),
-              role: data.role || "회원",
-              name: data.name || data.id || doc.id,
-              avatar: data.avatar || "🐻"
-            });
+        const usersMap = new Map();
+        // Start with default users as fallback
+        DEFAULT_USERS.forEach(u => {
+          usersMap.set(u.id, { ...u, name: u.id, avatar: "🐻" });
+        });
+
+        // Overlay with Firestore data
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const uid = data.id || doc.id;
+          usersMap.set(uid, {
+            id: uid,
+            pw: String(data.pw || (usersMap.get(uid)?.pw || "")),
+            role: data.role || (usersMap.get(uid)?.role || "회원"),
+            name: data.name || uid,
+            avatar: data.avatar || "🐻"
           });
-          AUTHORIZED_USERS = usersList;
-          saveLocalUsers();
+        });
+
+        AUTHORIZED_USERS = Array.from(usersMap.values());
+        saveLocalUsers();
 
           if (currentUser) {
             const updatedMe = AUTHORIZED_USERS.find(u => u.id === currentUser.id);

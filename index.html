@@ -839,21 +839,20 @@
         AUTHORIZED_USERS = Array.from(usersMap.values());
         saveLocalUsers();
 
-          if (currentUser) {
-            const updatedMe = AUTHORIZED_USERS.find(u => u.id === currentUser.id);
-            if (updatedMe) {
-              currentUser = updatedMe;
-              localStorage.setItem('current_user', JSON.stringify(updatedMe));
-            }
+        if (currentUser) {
+          const updatedMe = AUTHORIZED_USERS.find(u => u.id === currentUser.id);
+          if (updatedMe) {
+            currentUser = updatedMe;
+            localStorage.setItem('current_user', JSON.stringify(updatedMe));
           }
-
-          if (currentUser && currentUser.role === "관리자") {
-            populateAdminSelector();
-            renderUserManagementList();
-          }
-          renderCalendar();
-          renderRankingAndBoard();
         }
+
+        if (currentUser && currentUser.role === "관리자") {
+          populateAdminSelector();
+          renderUserManagementList();
+        }
+        renderCalendar();
+        renderRankingAndBoard();
       }, err => {
         console.error("Users sync error:", err);
       });
